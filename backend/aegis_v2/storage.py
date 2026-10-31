@@ -18,6 +18,7 @@ metadata = MetaData()
 records = Table("records", metadata,
     Column("id", String(100), primary_key=True), Column("workspace", String(100), nullable=False, index=True),
     Column("kind", String(50), nullable=False, index=True), Column("version", Integer, nullable=False, default=1),
+    Column("parent", String(100), nullable=True, index=True),
     Column("private", Boolean, nullable=False, default=False), Column("payload", Text, nullable=False),
     Column("created", Float, nullable=False), Column("updated", Float, nullable=False))
 events = Table("events", metadata,
@@ -103,7 +104,7 @@ class Store:
     def create(self, kind: str, workspace: str, payload: dict, *, id: str | None = None, private=False):
         identifier = id or new_id(kind)
         with self.transaction() as conn:
-            conn.execute(insert(records).values(id=identifier, workspace=workspace, kind=kind, version=1,
+            conn.execute(insert(records).values(id=identifier, workspace=workspace, kind=kind, version=1, parent=payload.get("campaign_id"),
                          private=private, payload=self._encode(payload, private), created=now(), updated=now()))
         return identifier
 
@@ -114,11 +115,17 @@ class Store:
             raise NotFound(identifier)
         return self._decode(row, private_access) | {"id": row["id"], "_version": row["version"], "_created": row["created"]}
 
-    def list(self, kind: str, workspace: str, *, limit=100, offset=0, private_access=False) -> list[dict]:
+    def list(self, kind: str, workspace: str, *, limit=100, offset=0, private_access=False, parent=None) -> list[dict]:
+        statement = select(records).where(records.c.kind == kind, records.c.workspace == workspace)
+        if parent is not None:
+            statement = statement.where(records.c.parent == parent)
         with self.engine.connect() as conn:
-            rows = conn.execute(select(records).where(records.c.kind == kind, records.c.workspace == workspace)
-                    .order_by(records.c.created.desc()).limit(min(limit, 1000)).offset(offset)).mappings().all()
+            rows = conn.execute(statement.order_by(records.c.created.desc()).limit(min(limit, 1000)).offset(offset)).mappings().all()
         return [self._decode(row, private_access) | {"id": row["id"], "_version": row["version"], "_created": row["created"]} for row in rows]
+
+    def workspaces(self):
+        with self.engine.connect() as conn:
+            return list(conn.execute(select(records.c.workspace).distinct()).scalars())
 
     def mutate(self, identifier: str, workspace: str, fn: Callable[[dict], dict], *, private_access=False) -> dict:
         with self.transaction() as conn:

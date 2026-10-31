@@ -41,6 +41,7 @@ class Targets:
         validate_local_endpoint(spec.endpoint, self.settings)
         target_id = new_id("target")
         snapshot = spec.model_dump(mode="json")
+        snapshot["target_id"] = target_id
         canaries = []
         # Canaries are generated server-side after receiving the target manifest.
         # Their values never appear in the manifest sent to Red or in public APIs.
@@ -52,7 +53,6 @@ class Targets:
                 canaries.append({"id": cid, "value": secret, "document_id": doc["id"], "tenant": doc["tenant"]})
         revision = digest(snapshot)
         snapshot["revision"] = revision
-        snapshot["target_id"] = target_id
         self.store.create("target_snapshot", workspace, snapshot, id="snapshot_" + revision, private=True)
         self.store.create("vault", workspace, {"revision": "oracle-v2", "canaries": canaries},
                           id="vault_" + target_id, private=True)

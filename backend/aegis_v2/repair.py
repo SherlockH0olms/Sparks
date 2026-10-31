@@ -7,6 +7,7 @@ from pathlib import Path
 from .contracts import DefenseConfig, Property, digest, now
 from .evaluation import suite_metrics
 from .storage import NotFound, Conflict
+from .scenarios import IMPORTANCE
 
 CONTROLS = {
     "tenant_filter": {"name": "Server-side tenant retrieval filter", "requires": ["rag", "multi_tenant"],
@@ -156,7 +157,7 @@ class RepairService:
 
     def step(self, workspace, campaign_id):
         c = self.store.get(campaign_id, workspace)
-        selected = sorted(c["groups"], key=lambda fid: -__import__("aegis_v2.scenarios", fromlist=["IMPORTANCE"]).IMPORTANCE[Property(self.store.get(fid, workspace, private_access=True)["property"])])
+        selected = sorted(c["groups"], key=lambda fid: -IMPORTANCE[Property(self.store.get(fid, workspace, private_access=True)["property"])])
         selected = selected[:c["spec"]["max_repair_groups"]]
         index = c["progress"]["repair"]
         if index >= len(selected):

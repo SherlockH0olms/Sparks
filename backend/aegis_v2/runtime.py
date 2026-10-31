@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import threading
 from collections import Counter
 
 from .atlas import mapping
@@ -32,6 +33,7 @@ class Platform:
         self.targets = Targets(store, settings, target_transport)
         self.red_client = ChatClient(settings.red, transport=red_transport)
         self.judge_client = ChatClient(settings.judge, transport=judge_transport)
+        self.worker_context = threading.local()
 
     def generator(self, workspace):
         return RedGenerator(BudgetedChat(self.store, workspace, self.red_client, "generator_calls"))
@@ -106,6 +108,10 @@ class Platform:
         return self.summary(actor.workspace, campaign_id)
 
     def check_control(self, workspace, campaign_id):
+        owner = getattr(self.worker_context, "owner", None)
+        if owner and getattr(self.worker_context, "campaign", None) == campaign_id:
+            if self.store.get("job_" + campaign_id, workspace)["owner"] != owner:
+                raise ControlSignal("lease_lost")
         c = self.store.get(campaign_id, workspace)
         if c.get("control"):
             raise ControlSignal(c["control"])

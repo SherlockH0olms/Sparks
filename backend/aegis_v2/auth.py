@@ -33,7 +33,7 @@ class Auth:
     def authenticate_key(self, token: str) -> Actor:
         if not token:
             raise PermissionError("Authentication is required.")
-        if self.admin_token and hmac.compare_digest(token_hash(token), token_hash(self.admin_token)):
+        if len(self.admin_token) >= 32 and hmac.compare_digest(token_hash(token), token_hash(self.admin_token)):
             return Actor(id="bootstrap-admin", name="Administrator", role=Role.ADMIN)
         try:
             record = self.store.get("key_" + token_hash(token), "auth", private_access=True)

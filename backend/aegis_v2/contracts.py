@@ -71,6 +71,7 @@ class CampaignState(StrEnum):
     REPRODUCING = "reproducing"
     REPAIRING = "repairing"
     VERIFYING = "verifying"
+    REPORTING = "reporting"
     PAUSED = "paused"
     COMPLETED = "completed"
     CANCELLED = "cancelled"

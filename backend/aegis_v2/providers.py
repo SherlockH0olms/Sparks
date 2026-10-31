@@ -123,6 +123,7 @@ class BudgetedChat:
                     "wall_seconds": self.client.settings.timeout}
         budget.reserve(operation_id, bucket, reserved, purpose)
         self.store.create("call", self.workspace, {"request_hash": request_hash, "messages": messages,
+                 "campaign_id": budget.id.removeprefix("budget_"),
                  "tools": tools, "status": "interrupted", "provenance": self.client.provenance,
                  "model": self.client.settings.model or self.client.settings.deployment,
                  "response": None}, id=call_id, private=True)
