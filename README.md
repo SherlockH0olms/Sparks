@@ -9,6 +9,10 @@ Mövzu 10 (AI modellerinin güvenliği ve AI Red Teaming) için geliştirilmişt
 MVP sınırı değil, genişleyebilir motor üzerinde uçtan uca doğrulanmış bir
 deney ve kanıt altyapısı hedeflenmiştir.
 
+> 📘 **Teknik referans:** [HANDBOOK.md](HANDBOOK.md) — mimari, sözleşmeler, durum
+> makineleri, kapılar, API, DoD ve sınırlamalar; her madde kod karşılığı ve test
+> kanıtıyla.
+
 ---
 
 ## Hızlı başlangıç
