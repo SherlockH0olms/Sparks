@@ -30,6 +30,7 @@ from aegis.contracts.models import (
 )
 from aegis.repair.catalog import ControlCatalog
 from aegis.evaluation.baseline import BaselineRunner
+from aegis.execution import run_attempt_chain, documents_for_attempt
 from aegis.targets.synthetic_assistant.app import (
     AssistantRequest,
     DefenseStack,
@@ -178,17 +179,17 @@ class RepairLab:
         candidate.state = RepairState.BUILDING
         candidate.gate_results["build"] = "ok"
 
-        # Kapı 2: güvenlik ön testi — orijinal ihlal denemeleri tekrar oynatılır
+        # Kapı 2: güvenlik ön testi — orijinal ihlal denemeleri zincirle tekrar oynatılır
         replay_violations = 0
         for att in attack_attempts:
-            ctx = att.tenant_context or TenantContext(tenant_id="tenant-alpha", user_id="gate")
-            req = AssistantRequest(
-                message=att.turns[0] if att.turns else "",
-                tenant_context=ctx,
-                assigned_document_ids=list(att.document_ids),
+            documents_for_attempt(assistant, list(att.document_ids))
+            resp = run_attempt_chain(
+                assistant,
+                att.turns,
+                att.tenant_context or TenantContext(tenant_id="tenant-alpha", user_id="gate"),
+                document_ids=list(att.document_ids),
                 expect_json=(att.cell.strategy_family.value == "output_schema_abuse"),
             )
-            resp = assistant.handle(req)
             probe = att.model_copy(deep=True)
             probe.execution_status = ExecutionStatus.COMPLETED
             if self.evaluator:

@@ -30,6 +30,7 @@ from aegis.coverage.grid import CoverageGrid
 from aegis.coverage.scheduler import Scheduler
 from aegis.evaluation.baseline import BaselineRunner
 from aegis.evaluation.evaluator import IndependentEvaluator
+from aegis.execution import run_attempt_chain
 from aegis.findings.pipeline import FindingPipeline
 from aegis.red.library import StrategyLibrary, injected_doc_body_for
 from aegis.red.memory import RedMemory
@@ -144,15 +145,19 @@ class CampaignEngine:
     # -- keşif döngüsü --------------------------------------------------------------
 
     def _strategy_for_cell(self, cell):
-        """Hücrenin özellik+ailesine uygun strateji ve dil seç."""
+        """Hücrenin özellik+ailesine uygun strateji ve DİL seç.
+
+        Hücrenin dili seçimde belirleyicidir: 'en' hücresine 'tr' metni
+        gönderilmez. Strateji o dili desteklemiyorsa hücre başka bir
+        strateji+aile kombinasyonunca doldurulur.
+        """
         for strategy in self.library.strategies.values():
             if strategy.family != cell.key.strategy_family:
                 continue
             if cell.key.security_property not in strategy.targets_property:
                 continue
-            for lang in self.spec.languages:
-                if lang in strategy.languages:
-                    return (strategy.strategy_id, lang)
+            if cell.key.language in strategy.languages:
+                return (strategy.strategy_id, cell.key.language)
         return None
 
     def _make_attempt(self, decision, variant_index: int = 0) -> Attempt:
@@ -200,19 +205,24 @@ class CampaignEngine:
         return [t + suffix for t in turns]
 
     def _execute_attempt(self, attempt: Attempt) -> None:
-        """Hedef çağrısı + değerlendirme; execution/verdict ayrı yazılır."""
+        """Hedef çağrısı + değerlendirme; execution/verdict ayrı yazılır.
+
+        Çok turlu stratejilerde turlar sırayla gönderilir: her yanıt,
+        bir sonraki turun konuşma geçmişine (history) eklenir. Değerlendirme
+        yalnızca son tura yapılır; ara turlar kayıtlarda saklanır.
+        """
         self._emit(
             EventKind.ATTEMPT_STARTED,
             {"attempt_id": attempt.attempt_id, "strategy": attempt.strategy_id, "language": attempt.language},
         )
         t0 = time.perf_counter()
-        req = AssistantRequest(
-            message=attempt.turns[0] if attempt.turns else "",
-            tenant_context=attempt.tenant_context,
-            assigned_document_ids=list(attempt.document_ids),
+        resp = run_attempt_chain(
+            self.baseline_assistant,
+            attempt.turns,
+            attempt.tenant_context,
+            document_ids=list(attempt.document_ids),
             expect_json=(attempt.cell.strategy_family.value == "output_schema_abuse"),
         )
-        resp = self.baseline_assistant.handle(req)
         attempt.execution_status = ExecutionStatus.COMPLETED
         attempt.response = resp.text
         attempt.tool_calls = resp.tool_calls
@@ -303,15 +313,14 @@ class CampaignEngine:
         violating = [a for a in self.campaign.attempts if a.verdict == Verdict.VIOLATION]
         seen_group_keys: set[tuple] = set()
         for att in violating:
-            assessment = None
-            # orijinal değerlendirmeyi yeniden üret
-            req = AssistantRequest(
-                message=att.turns[0] if att.turns else "",
-                tenant_context=att.tenant_context,
-                assigned_document_ids=list(att.document_ids),
+            # orijinal değerlendirmeyi zincirle yeniden üret
+            resp = run_attempt_chain(
+                self.baseline_assistant,
+                att.turns,
+                att.tenant_context,
+                document_ids=list(att.document_ids),
                 expect_json=(att.cell.strategy_family.value == "output_schema_abuse"),
             )
-            resp = self.baseline_assistant.handle(req)
             ev = self.evaluator.assess_attempt(att, resp)
             finding = self.finding_pipeline.build_finding(att, ev.assessment, resp)
             self.campaign.findings.append(finding)

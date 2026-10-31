@@ -16,6 +16,7 @@ from aegis.contracts.models import (
     SecurityProperty,
     Verdict,
 )
+from aegis.execution import run_attempt_chain
 from aegis.findings.atlas import map_finding_to_atlas
 from aegis.targets.synthetic_assistant.app import (
     AssistantRequest,
@@ -53,13 +54,13 @@ class FindingPipeline:
                 user_id=f"repro_{i}",
                 session_id=f"sess_repro_{i}",
             )
-            req = AssistantRequest(
-                message=attempt.turns[0] if attempt.turns else "",
-                tenant_context=fresh_ctx,
-                assigned_document_ids=list(attempt.document_ids),
+            resp = run_attempt_chain(
+                self.assistant,
+                attempt.turns,
+                fresh_ctx,
+                document_ids=list(attempt.document_ids),
                 expect_json=(attempt.cell.strategy_family.value == "output_schema_abuse"),
             )
-            resp = self.assistant.handle(req)
             repro_attempt = attempt.model_copy(
                 update={
                     "attempt_id": f"{attempt.attempt_id}_repro{i}",
@@ -107,13 +108,13 @@ class FindingPipeline:
 
     def _still_violates(self, turns: list[str], attempt: Attempt) -> bool:
         ctx = attempt.tenant_context or TenantContext(tenant_id="tenant-alpha", user_id="minimizer")
-        req = AssistantRequest(
-            message=turns[0] if turns else "",
-            tenant_context=ctx,
-            assigned_document_ids=list(attempt.document_ids),
+        resp = run_attempt_chain(
+            self.assistant,
+            turns,
+            ctx,
+            document_ids=list(attempt.document_ids),
             expect_json=(attempt.cell.strategy_family.value == "output_schema_abuse"),
         )
-        resp = self.assistant.handle(req)
         probe = attempt.model_copy(update={"turns": turns})
         probe.execution_status = attempt.execution_status
         ev = self.evaluator.assess_attempt(probe, resp)

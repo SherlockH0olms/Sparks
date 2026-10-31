@@ -68,6 +68,12 @@ _MAPPING_RULES: list[dict] = [
         "justification": "Görev kısıtı, doğrudan jailbreak tarzı talimatla aşıldı.",
     },
     {
+        "property": SecurityProperty.SECRET_CONFIDENTIALITY.value,
+        "family": StrategyFamily.MULTI_TURN_MANIPULATION.value,
+        "technique": "AML.T0030",
+        "justification": "Çok turlu güven istismarıyla modelden hassas bilgi kurtarıldı; çıktıdan hassas bilgi çıkarma.",
+    },
+    {
         "property": SecurityProperty.TASK_CONSTRAINT.value,
         "family": StrategyFamily.MULTI_TURN_MANIPULATION.value,
         "technique": "AML.T0051",
