@@ -338,6 +338,7 @@ class Attempt(BaseModel):
     evidence: list[EvidenceItem] = Field(default_factory=list)
     wall_ms: int = 0
     ts: str = Field(default_factory=now_iso)
+    llm_generated: bool = False  # turlar AI red teamer tarafından mı üretildi
 
     @property
     def is_valid(self) -> bool:

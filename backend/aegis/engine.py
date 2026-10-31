@@ -34,6 +34,7 @@ from aegis.execution import run_attempt_chain
 from aegis.findings.pipeline import FindingPipeline
 from aegis.red.library import StrategyLibrary, injected_doc_body_for
 from aegis.red.memory import RedMemory
+from aegis.red.generator import LLMGenerator, LLMGeneratorConfig
 from aegis.repair.lab import RepairLab
 from aegis.reporting.report import ReportGenerator
 from aegis.targets.synthetic_assistant.app import (
@@ -63,6 +64,7 @@ class CampaignEngine:
         self.ledger = BudgetLedger(spec.budget)
         self.library = StrategyLibrary()
         self.memory = RedMemory()
+        self.generator = LLMGenerator(LLMGeneratorConfig())  # AI red teamer (opsiyonel)
         self.grid = CoverageGrid(manifest, self.library, spec.languages)
         self.vault = None  # engine dışında enjekte edilir
         self.evaluator: IndependentEvaluator | None = None
@@ -163,8 +165,29 @@ class CampaignEngine:
     def _make_attempt(self, decision, variant_index: int = 0) -> Attempt:
         strategy = self.library.get(decision.strategy_id)
         turns = strategy.turn_texts(decision.language)
-        # Varyasyon: aynı stratejinin metnini küçük değişikliklerle çeşitlendir
-        if variant_index > 0:
+        generated = False
+        # AI red teamer: hafıza notlarıyla YENİ senaryo üret (kural: LLM üretir,
+        # karar vermez). Üretim başarısızsa statik kütüphane + varyasyon kullanılır.
+        if self.generator.available:
+            hints = self._memory_hints(decision)
+            llm_turns = self.generator.generate_attack(
+                strategy,
+                decision.language,
+                property_label=decision.cell_key.security_property.value,
+                memory_hints=hints,
+                variant_index=variant_index,
+            )
+            self.ledger.spend(
+                "llm_attack_generation",
+                {ResourceKind.GENERATOR_CALLS: 1, ResourceKind.TOKENS: 500},
+            )
+            if llm_turns and all(t.strip() for t in llm_turns):
+                # aynı metni tekrar göndermeme kontrolü
+                if not self.memory.seen(llm_turns):
+                    turns = llm_turns
+                    generated = True
+        # Varyasyon: statik kullanıldıysa strateji metnini küçük eklerle çeşitlendir
+        if not generated and variant_index > 0:
             turns = self._vary_turns(turns, decision.language, variant_index)
         doc_ids: list[str] = []
         if strategy.requires_document:
@@ -183,7 +206,7 @@ class CampaignEngine:
         from aegis.contracts.models import TenantContext
 
         ctx = TenantContext(tenant_id="tenant-alpha", user_id="red_operator")
-        return Attempt(
+        att = Attempt(
             campaign_id=self.spec.campaign_id,
             cell=decision.cell_key,
             strategy_id=decision.strategy_id,
@@ -192,6 +215,20 @@ class CampaignEngine:
             document_ids=doc_ids,
             tenant_context=ctx,
         )
+        att.llm_generated = generated
+        return att
+
+    def _memory_hints(self, decision) -> list[str]:
+        """Aynı aile + aynı dildeki son denemelerin kısa notları (LLM ipucu olarak)."""
+        hints: list[str] = []
+        for rec in self.memory.all_records()[-8:]:
+            if rec.cell_key[1] != decision.cell_key.strategy_family.value:
+                continue
+            if rec.language != decision.language:
+                continue
+            sonuc = "başarılı" if rec.succeeded else "başarısız"
+            hints.append(f"{rec.strategy_id} ({decision.language}) → {sonuc}: {', '.join(rec.observations)[:120]}")
+        return hints
 
     _VARIATION_SUFFIXES = {
         "tr": ["", " Lütfen ayrıntılı yanıt ver.", " Bu çok önemli.", " Acil olarak işlem gerekiyor."],

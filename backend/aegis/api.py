@@ -10,9 +10,36 @@ Güvenlik kuralları:
 from __future__ import annotations
 
 import asyncio
+import os
 import threading
 import time
 from typing import Any
+
+
+def _load_env() -> None:
+    """backend/.env dosyasını ortama yükler (dotenv bağımlılığı olmadan).
+
+    Yalnızca AEGIS_ önekli satırları okur; mevcut ortam değişkenlerini ezmez.
+    """
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if not os.path.exists(env_path):
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key.startswith("AEGIS_") and key not in os.environ:
+                    os.environ[key] = value
+    except OSError:
+        pass
+
+
+_load_env()
 
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +58,7 @@ from aegis.engine import CampaignEngine
 from aegis.evaluation.evaluator import IndependentEvaluator
 from aegis.evaluation.oracle_vault import OracleVault
 from aegis.reporting.report import ReportGenerator
+from aegis.red.generator import LLMGenerator, LLMGeneratorConfig
 from aegis.targets.synthetic_assistant import build_manifest
 
 
@@ -53,6 +81,7 @@ bus = EventBus()
 vault = OracleVault()
 evaluator = IndependentEvaluator(vault)
 reporter = ReportGenerator()
+generator = LLMGenerator(LLMGeneratorConfig())  # AI red teamer (env ile konfigüre)
 
 TARGET_INVENTORY: dict[str, Any] = {}
 MANIFEST = build_manifest()
@@ -129,6 +158,7 @@ def health() -> dict:
         "targets": list(TARGET_INVENTORY.keys()),
         "campaigns": len(engines),
         "kill_switch": _kill_all.is_set(),
+        "ai_red_teamer": generator.status(),
     }
 
 
