@@ -24,6 +24,10 @@ def now() -> float:
     return time.time()
 
 
+def attack_digest(candidate: dict) -> str:
+    return digest({k: candidate.get(k) for k in ("language", "turns", "document_body")})
+
+
 class Contract(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
