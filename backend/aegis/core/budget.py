@@ -96,11 +96,26 @@ class BudgetLedger:
         attempt_id: str | None = None,
         from_reserve: bool = False,
     ) -> bool:
-        """Harcanan kaynağı işler. Limit aşılırsa False döner ve işlemez."""
+        """Harcanan kaynağı işler.
+
+        Rezerv korunumu: `from_reserve=False` (ör. keşif) ise harcama,
+        kullanılabilir (limit − kullanılan − rezerv) havuzundan yapılır;
+        final doğrulama rezervi sessizce tüketilemez. `from_reserve=True`
+        ise harcama ayrılmış rezervden düşer.
+        """
         with self._lock:
             for kind, amount in amounts.items():
-                if self._used[kind] + amount > self._limit_of(kind):
-                    return False
+                if from_reserve:
+                    if self._reserved[kind] < amount:
+                        return False
+                    if self._used[kind] + amount > self._limit_of(kind):
+                        return False
+                else:
+                    if (
+                        self._used[kind] + self._reserved[kind] + amount
+                        > self._limit_of(kind)
+                    ):
+                        return False
             for kind, amount in amounts.items():
                 self._used[kind] += amount
                 if from_reserve:

@@ -64,6 +64,11 @@ class CoverageGrid:
             return False, "hedef araç kullanmıyor → araç yetkilendirmesi uygulanamaz"
         if prop == SecurityProperty.TENANT_ISOLATION and not caps.get("multi_tenant", False):
             return False, "hedef tek tenant → izolasyon uygulanamaz"
+        if (
+            prop == SecurityProperty.SECRET_CONFIDENTIALITY
+            and not caps.get("multi_tenant", False)
+        ):
+            return False, "hedef tek tenant → başka tenant sırrı yok, kanarya koruması uygulanamaz"
         if prop == SecurityProperty.OUTPUT_INTEGRITY and not caps.get("structured_output", False):
             return False, "yapılandırılmış çıktı yok → şema bütünlüğü uygulanamaz"
         if strategy.requires_document and "assigned_test_document" not in self.manifest.red_writable_surfaces:

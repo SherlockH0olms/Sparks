@@ -391,6 +391,13 @@ class CampaignEngine:
             if exp.winner is None:
                 continue
             # adayı dondur, bağımsız final değerlendirmesini çalıştır
+            # (bütçe: final doğrulama rezervi serbest bırakılmıştı; harcama
+            # burada amaç etiketiyle deftere yazılır)
+            self.ledger.spend(
+                "final_verification",
+                {ResourceKind.TARGET_CALLS: 2.0, ResourceKind.TOKENS: 800},
+                from_reserve=True,
+            )
             run = self.verification.run(
                 exp, exp.winner, attack_attempts, property_value=group.violated_property.value
             )
@@ -407,8 +414,12 @@ class CampaignEngine:
             # Protokol: seçilen aday başarısızsa bir sonraki geçen aday denenir;
             # aynı geliştirme setiyle ikinci deneme artık tam bağımsız sayılmaz.
             if run.verdict is not None and run.verdict.value != "pass":
-                fallback = self._fallback_candidate(exp)
+                fallback = self.repair_lab.fallback_candidate(exp, exclude_id=exp.winner)
                 if fallback is not None:
+                    self.ledger.spend(
+                        "final_verification_fallback",
+                        {ResourceKind.TARGET_CALLS: 1.0, ResourceKind.TOKENS: 400},
+                    )
                     run2 = self.verification.run(
                         exp, fallback, attack_attempts, property_value=group.violated_property.value
                     )
@@ -424,20 +435,6 @@ class CampaignEngine:
                     )
                     if run2.verdict is not None and run2.verdict.value == "pass":
                         exp.winner = fallback
-
-    def _fallback_candidate(self, exp) -> str | None:
-        from aegis.contracts.models import RepairState
-
-        order = ["D", "C", "B"]
-        for label in order:
-            for cand in exp.candidates:
-                if cand.label == label and cand.state in (
-                    RepairState.BUILT,
-                    RepairState.VALIDATING,
-                    RepairState.VALIDATED_IN_SCOPE,
-                ) and cand.candidate_id != exp.winner:
-                    return cand.candidate_id
-        return None
 
     # -- tam akış ---------------------------------------------------------------------
 

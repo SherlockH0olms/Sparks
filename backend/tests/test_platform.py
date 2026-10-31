@@ -42,19 +42,7 @@ from aegis.findings.atlas import map_finding_to_atlas
 from aegis.engine import CampaignEngine
 
 
-@pytest.fixture()
-def manifest():
-    return build_manifest()
-
-
-@pytest.fixture()
-def assistant(manifest):
-    return SyntheticAssistant(manifest.documents, DefenseStack())
-
-
-@pytest.fixture()
-def ctx():
-    return TenantContext(tenant_id="tenant-alpha", user_id="red")
+# Fixture'lar tests/conftest.py'de tanımlı (manifest, assistant, ctx).
 
 
 # -- durum makineleri -------------------------------------------------------------

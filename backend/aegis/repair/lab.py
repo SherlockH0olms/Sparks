@@ -60,9 +60,9 @@ PROPERTY_CONTROLS: dict[SecurityProperty, dict[str, list[str]]] = {
         "D": ["INSTRUCTION_DATA_SEPARATION", "INJECTION_PATTERN_FILTER"],
     },
     SecurityProperty.TASK_CONSTRAINT: {
-        "C": ["INJECTION_PATTERN_FILTER"],
+        "C": ["INJECTION_PATTERN_FILTER", "RAG_TENANT_SCOPE"],
         "B": ["PROMPT_HARDENING"],
-        "D": ["INJECTION_PATTERN_FILTER", "PROMPT_HARDENING"],
+        "D": ["INJECTION_PATTERN_FILTER", "RAG_TENANT_SCOPE", "PROMPT_HARDENING"],
     },
     SecurityProperty.OUTPUT_INTEGRITY: {
         "C": ["OUTPUT_SCHEMA_VALIDATION"],
@@ -276,13 +276,42 @@ class RepairLab:
         return exp
 
     def _select_winner(self, candidates: list[RepairCandidate]) -> str | None:
-        passing = [c for c in candidates if c.state in (RepairState.BUILT, RepairState.VALIDATING, RepairState.VALIDATED_IN_SCOPE)]
+        """Kapıları geçen adaylar arasından en az değişiklikli olanı seçer.
+
+        Sıra: C (server-side, mekanik) → D (birleşik) → B (yalnızca prompt).
+        A referans ölçüm olduğu için asla kazanan olmaz. B, C ve D'nin hepsi
+        geçse bile mekanik olmayan B son sırada kalır.
+        """
+        passing = [
+            c
+            for c in candidates
+            if c.state in (RepairState.BUILT, RepairState.VALIDATING, RepairState.VALIDATED_IN_SCOPE)
+            and c.label != "A"
+        ]
         if not passing:
             return None
-        # öncelik: en az değişiklikle ihlali kapatan aday (C tercih, sonra D, sonra B)
-        order = {"C": 0, "D": 1, "B": 2, "A": 3}
+        order = {"C": 0, "D": 1, "B": 2}
         passing.sort(key=lambda c: order.get(c.label, 9))
-        winner = passing[0]
-        if winner.label == "A":
-            return None
-        return winner.candidate_id
+        return passing[0].candidate_id
+
+    def fallback_candidate(self, exp: "RepairExperiment", exclude_id: str | None = None) -> str | None:
+        """Kazanan başarısızsa sıradaki aday: D → C → B (A hariç).
+
+        Not: Bu yöntem aday seçim kurallarını bilir; deneyi yürüten motor
+        (engine) bunu çağırır ve bağımsızlık azalmasını olayla işaretler.
+        """
+        order = ["D", "C", "B"]
+        for label in order:
+            for cand in exp.candidates:
+                if (
+                    cand.label == label
+                    and cand.state
+                    in (
+                        RepairState.BUILT,
+                        RepairState.VALIDATING,
+                        RepairState.VALIDATED_IN_SCOPE,
+                    )
+                    and cand.candidate_id != (exclude_id or exp.winner)
+                ):
+                    return cand.candidate_id
+        return None
