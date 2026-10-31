@@ -39,7 +39,7 @@ def build_cells(spec: CampaignCreate, snapshot: dict) -> list[dict]:
                     reasons.append("No structured output contract is declared.")
                 if prop == Property.SESSION and not caps.get("persistent_memory"):
                     reasons.append("The target has no persistent cross-session memory capability.")
-                if required > spec.max_turns:
+                if spec.max_turns is not None and required > spec.max_turns:
                     reasons.append("Required interaction depth exceeds the campaign turn limit.")
                 key = {"property": prop, "family": family, "language": language, "surface": surface, "required_turns": required}
                 cell = Cell(id="cell_" + digest(key)[:20], **key, applicable=not reasons,

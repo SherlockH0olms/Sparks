@@ -19,6 +19,10 @@ class ProviderError(RuntimeError):
         self.status = status
 
 
+class UnsupportedTools(ProviderError):
+    pass
+
+
 @dataclass
 class ChatResult:
     content: str
@@ -26,10 +30,12 @@ class ChatResult:
     usage: dict = field(default_factory=dict)
     finish_reason: str = ""
     provider_request_id: str = ""
+    reasoning_content: str | None = None
 
     def payload(self):
         return {"content": self.content, "tool_calls": self.tool_calls, "usage": self.usage,
-                "finish_reason": self.finish_reason, "provider_request_id": self.provider_request_id}
+                "finish_reason": self.finish_reason, "provider_request_id": self.provider_request_id,
+                "reasoning_content": self.reasoning_content}
 
 
 class ChatClient:
@@ -38,6 +44,7 @@ class ChatClient:
         self.transport = transport
         self.local = local
         self.provenance = "fixture" if transport else ("local_model" if local else settings.provider)
+        self.tool_calling_supported = None
 
     def ready(self):
         if self.local:
@@ -70,7 +77,9 @@ class ChatClient:
         url, params, headers = self.request_parts()
         model_name = (s.model or s.deployment).lower()
         token_field = "max_completion_tokens" if model_name.startswith(("o1", "o3", "o4", "gpt-5", "gpt-6")) else "max_tokens"
-        payload = {"messages": messages, token_field: s.max_output_tokens}
+        payload = {"messages": messages}
+        if s.max_output_tokens is not None:
+            payload[token_field] = s.max_output_tokens
         if s.provider != "azure_openai":
             payload["model"] = s.model
         if tools:
@@ -80,6 +89,15 @@ class ChatClient:
             with httpx.Client(timeout=s.timeout, transport=self.transport, follow_redirects=False, trust_env=False) as client:
                 response = client.post(url, params=params, headers=headers, json=payload)
             if response.status_code >= 400:
+                if tools and response.status_code in {400, 422}:
+                    try:
+                        error = response.json().get("error", {})
+                        detail = str(error.get("message", "") if isinstance(error, dict) else error).lower()
+                    except ValueError:
+                        detail = ""
+                    if "tool" in detail and any(x in detail for x in ("unsupported", "not supported", "does not support", "unrecognized")):
+                        self.tool_calling_supported = False
+                        raise UnsupportedTools("This deployment does not support native function calling.")
                 raise ProviderError(f"Provider returned HTTP {response.status_code}; request did not complete.")
             data = response.json()
             choice = data["choices"][0]
@@ -87,10 +105,15 @@ class ChatClient:
             content = message.get("content") or ""
             if isinstance(content, list):
                 content = "\n".join(part.get("text", "") for part in content if isinstance(part, dict))
-            if not isinstance(content, str) or not isinstance(message.get("tool_calls", []), list):
+            calls = message.get("tool_calls") or []
+            if not isinstance(content, str) or not isinstance(calls, list):
                 raise ValueError("Invalid chat message shape.")
-            return ChatResult(content, message.get("tool_calls", []), data.get("usage", {}),
-                              choice.get("finish_reason", ""), response.headers.get("x-request-id", data.get("id", "")))
+            if calls:
+                self.tool_calling_supported = True
+            reasoning = message.get("reasoning_content")
+            return ChatResult(content, calls, data.get("usage", {}),
+                              choice.get("finish_reason", ""), response.headers.get("x-request-id", data.get("id", "")),
+                              reasoning if isinstance(reasoning, str) else None)
         except httpx.TimeoutException:
             raise ProviderError("Provider timed out; no security result was inferred.", ExecutionStatus.TIMEOUT) from None
         except (httpx.HTTPError, KeyError, ValueError, TypeError, IndexError):
@@ -121,8 +144,15 @@ class BudgetedChat:
         # UTF-8 bytes plus message/schema overhead conservatively bound ordinary
         # text tokens, avoiding optimistic character/4 accounting.
         input_bound = len(json.dumps({"messages": messages, "tools": tools}, ensure_ascii=False).encode()) + 32 * len(messages)
-        reserved = {self.resource: 1, "tokens": input_bound + self.client.settings.max_output_tokens,
-                    "wall_seconds": self.client.settings.timeout}
+        max_output = self.client.settings.max_output_tokens
+        timeout = self.client.settings.timeout
+        token_reservation = input_bound + (max_output or 0)
+        if max_output is None:
+            available_tokens = budget.available(bucket, "tokens")
+            if available_tokens is not None:
+                token_reservation = max(input_bound, available_tokens)
+        wall_reservation = timeout if timeout is not None else (budget.available(bucket, "wall_seconds") or 0)
+        reserved = {self.resource: 1, "tokens": token_reservation, "wall_seconds": wall_reservation}
         budget.reserve(operation_id, bucket, reserved, purpose)
         self.store.create("call", self.workspace, {"request_hash": request_hash, "messages": messages,
                  "campaign_id": budget.id.removeprefix("budget_"),

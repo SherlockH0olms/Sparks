@@ -53,7 +53,7 @@ class VerificationService:
                     attempt = self.store.get(row["attempt_id"], workspace, private_access=True)
                     observation = {}
                     if "public_response" in snapshot["red_observations"]:
-                        observation["public_response"] = [s["trace"].get("response", "")[:1000] for s in attempt["steps"]]
+                        observation["public_response"] = [s["trace"].get("response", "") for s in attempt["steps"]]
                     if "refusal" in snapshot["red_observations"]:
                         observation["refusal"] = [s["trace"].get("refused", False) for s in attempt["steps"]]
                     observations.append(observation)

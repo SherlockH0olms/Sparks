@@ -18,13 +18,16 @@ class ProviderSettings:
     model: str = ""
     deployment: str = ""
     api_version: str = "2024-05-01-preview"
-    timeout: float = 45.0
-    max_output_tokens: int = 1200
+    timeout: float | None = None
+    max_output_tokens: int | None = None
+    tool_mode: str = "auto"
 
     def issues(self) -> list[str]:
         out = []
         if self.provider not in {"foundry", "azure_openai", "openai_compatible"}:
             out.append("Unsupported provider type.")
+        if self.tool_mode not in {"auto", "native", "json"}:
+            out.append("Tool mode must be auto, native or json.")
         if not self.endpoint:
             out.append("Endpoint is missing.")
         elif urlsplit(self.endpoint).scheme != "https" and not (
@@ -41,7 +44,9 @@ class ProviderSettings:
 
     def public(self) -> dict:
         return {"provider": self.provider, "configured": not self.issues(),
-                "model": self.model or self.deployment or None, "issues": self.issues()}
+                "model": self.model or self.deployment or None, "issues": self.issues(),
+                "max_output_tokens": self.max_output_tokens, "timeout_seconds": self.timeout,
+                "tool_mode": self.tool_mode}
 
 
 @dataclass(frozen=True)
@@ -68,7 +73,15 @@ class Settings:
     def load(cls) -> "Settings":
         load_dotenv(ROOT / ".env", override=False)
         load_dotenv(ROOT / "backend" / ".env", override=False)
-        def provider(prefix: str, limit: int) -> ProviderSettings:
+        def optional_number(name: str, cast):
+            raw = os.getenv(name, "0").strip().lower()
+            if raw in {"", "0", "none", "null", "unlimited"}:
+                return None
+            value = cast(raw)
+            if value <= 0:
+                raise ValueError(name + " must be positive or 0 for no application limit.")
+            return value
+        def provider(prefix: str) -> ProviderSettings:
             return ProviderSettings(
                 provider=os.getenv(prefix + "_PROVIDER", "foundry"),
                 endpoint=os.getenv(prefix + "_ENDPOINT", "").rstrip("/"),
@@ -76,8 +89,9 @@ class Settings:
                 model=os.getenv(prefix + "_MODEL", ""),
                 deployment=os.getenv(prefix + "_DEPLOYMENT", ""),
                 api_version=os.getenv(prefix + "_API_VERSION", "2024-05-01-preview"),
-                timeout=float(os.getenv(prefix + "_TIMEOUT_SECONDS", "45")),
-                max_output_tokens=int(os.getenv(prefix + "_MAX_OUTPUT_TOKENS", str(limit))),
+                timeout=optional_number(prefix + "_TIMEOUT_SECONDS", float),
+                max_output_tokens=optional_number(prefix + "_MAX_OUTPUT_TOKENS", int),
+                tool_mode=os.getenv(prefix + "_TOOL_MODE", "auto").lower(),
             )
         database_url = os.getenv("AEGIS_DATABASE_URL", "sqlite:///./data/aegis.db")
         if database_url.startswith("sqlite:///./"):
@@ -95,6 +109,6 @@ class Settings:
             local_allowed_hosts=tuple(x.strip() for x in os.getenv("AEGIS_LOCAL_ALLOWED_HOSTS", "localhost,127.0.0.1,::1,host.docker.internal").split(",") if x.strip()),
             target_timeout=float(os.getenv("AEGIS_TARGET_TIMEOUT_SECONDS", "45")),
             target_max_output_tokens=int(os.getenv("AEGIS_TARGET_MAX_OUTPUT_TOKENS", "800")),
-            red=provider("AEGIS_RED", 1200), judge=provider("AEGIS_JUDGE", 500),
+            red=provider("AEGIS_RED"), judge=provider("AEGIS_JUDGE"),
         )
 

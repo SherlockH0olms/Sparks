@@ -236,11 +236,11 @@ class Platform:
         c = self.store.get(campaign_id,workspace)
         snapshot = self.snapshot_for(c,workspace)
         observations = []
-        for aid in c["discovery_attempts"][-5:]:
+        for aid in c["discovery_attempts"]:
             a = self.store.get(aid,workspace,private_access=True)
             row = {"scenario":a["cell"]["family"],"language":a["cell"]["language"]}
             if "public_response" in snapshot["red_observations"]:
-                row["public_response"]=[s["trace"].get("response","")[:1000] for s in a["steps"]]
+                row["public_response"]=[s["trace"].get("response","") for s in a["steps"]]
             if "refusal" in snapshot["red_observations"]:
                 row["refusal"]=[s["trace"].get("refused",False) for s in a["steps"]]
             if "tool_requests" in snapshot["red_observations"]:
@@ -252,7 +252,8 @@ class Platform:
         c=self.store.get(campaign_id,workspace)
         index=c["progress"]["discovery"]
         choice=choose_cell(c["cells"])
-        if index>=c["spec"]["max_discovery_attempts"] or choice is None:
+        maximum=c["spec"]["max_discovery_attempts"]
+        if choice is None or (maximum is not None and index>=maximum):
             self.phase(workspace,campaign_id,"reproducing")
             return
         cell,reason=choice

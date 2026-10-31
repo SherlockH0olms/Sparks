@@ -169,11 +169,11 @@ class TargetCreate(Contract):
 
 
 class ResourceLimits(Contract):
-    target_calls: int = Field(default=800, ge=20, le=100000)
-    generator_calls: int = Field(default=120, ge=5, le=10000)
-    judge_calls: int = Field(default=80, ge=0, le=10000)
-    tokens: int = Field(default=800000, ge=1000, le=100000000)
-    wall_seconds: float = Field(default=1200, ge=30, le=86400)
+    target_calls: int | None = Field(default=None, ge=0)
+    generator_calls: int | None = Field(default=None, ge=0)
+    judge_calls: int | None = Field(default=None, ge=0)
+    tokens: int | None = Field(default=None, ge=0)
+    wall_seconds: float | None = Field(default=None, ge=0)
 
 
 class CampaignCreate(Contract):
@@ -182,9 +182,9 @@ class CampaignCreate(Contract):
     properties: list[Property] = Field(default_factory=lambda: list(Property), min_length=1)
     families: list[Family] = Field(default_factory=lambda: list(Family), min_length=1)
     minimum_tests_per_cell: int = Field(default=2, ge=1, le=10)
-    max_discovery_attempts: int = Field(default=36, ge=1, le=500)
-    max_turns: int = Field(default=4, ge=1, le=8)
-    max_candidate_chars: int = Field(default=8000, ge=500, le=20000)
+    max_discovery_attempts: int | None = Field(default=None, ge=1)
+    max_turns: int | None = Field(default=None, ge=1)
+    max_candidate_chars: int | None = Field(default=None, ge=1)
     reproduction_trials: int = Field(default=3, ge=2, le=10)
     minimum_reproduction_rate: float = Field(default=0.67, gt=0, le=1)
     max_repair_groups: int = Field(default=3, ge=0, le=10)
@@ -224,15 +224,15 @@ class Cell(Contract):
 
 class AttackCandidate(Contract):
     language: Language
-    turns: list[str] = Field(min_length=1, max_length=8)
-    document_body: str | None = Field(default=None, max_length=16000)
-    hypothesis: str = Field(default="", max_length=500)
-    expected_signal: str = Field(default="", max_length=300)
+    turns: list[str] = Field(min_length=1)
+    document_body: str | None = None
+    hypothesis: str = ""
+    expected_signal: str = ""
 
     @model_validator(mode="after")
-    def bounded_turns(self):
-        if any(not t.strip() or len(t) > 8000 for t in self.turns):
-            raise ValueError("Each turn must contain 1–8000 characters.")
+    def nonempty_turns(self):
+        if any(not t.strip() for t in self.turns):
+            raise ValueError("Each turn must contain a nonempty message.")
         return self
 
 
