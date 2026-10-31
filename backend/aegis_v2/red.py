@@ -26,6 +26,7 @@ class RedGenerator:
             "limits": {"max_turns": spec["max_turns"], "max_total_characters": spec["max_candidate_chars"]},
             "allowed_observations": observations[-5:], "defense_information": defense_info,
             "purpose": "independent_final_evaluation" if blind else "authorized_discovery",
+            "case_identifier": operation_id,
             "output_schema": {"language": cell["language"], "turns": ["one user message per turn"],
                               "document_body": "required string for assigned_document; null otherwise",
                               "hypothesis": "brief mechanism hypothesis", "expected_signal": "public observable signal"},

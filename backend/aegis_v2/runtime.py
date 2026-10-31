@@ -338,5 +338,14 @@ class Platform:
         handler={"preflight":self.preflight_step,"baselining":self.baseline_step,"discovering":self.discovery_step,
                  "reproducing":self.reproduction_step}.get(c["phase"])
         if handler:handler(workspace,campaign_id)
-        else:raise ValueError("Phase handler is not installed: "+c["phase"])
+        elif c["phase"]=="repairing":
+            from .repair import RepairService
+            RepairService(self).step(workspace,campaign_id)
+        elif c["phase"]=="verifying":
+            from .verification import VerificationService
+            VerificationService(self).step(workspace,campaign_id)
+        elif c["phase"]=="reporting":
+            self.store.mutate(campaign_id,workspace,lambda p:p|{"state":"completed","finished_at":now(),"checkpoint":{"phase":"completed","saved_at":now()}})
+            self.store.event(workspace,campaign_id,"campaign_completed",{"scope_result":"See individual findings, verification results and coverage gaps."})
+        else:raise ValueError("Unknown phase: "+c["phase"])
 
