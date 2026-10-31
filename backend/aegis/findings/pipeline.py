@@ -141,7 +141,7 @@ class FindingPipeline:
             violated_property=prop,
             boundary=f"strategy_family={family}",
             component=self._component_for(prop),
-            observed_effect=response.text[:200],
+            observed_effect=self._effect_summary(prop, assessment, response),
             original_attempt_id=attempt.attempt_id,
             minimized_turns=minimized,
             reproduction_trials=repro["details"],
@@ -153,6 +153,14 @@ class FindingPipeline:
             severity=SEVERITY_BY_PROPERTY.get(prop, "medium"),
             limitations=self._limitations(prop),
         )
+
+    def _effect_summary(self, prop: SecurityProperty, assessment: Assessment, response: AssistantResponse) -> str:
+        """Gözlenen etki: genel yanıt metni değil, ihlale özgü kanıt özeti."""
+        det = assessment.deterministic_evidence
+        if det:
+            first = det[0].content
+            return f"[{det[0].kind}] {first[:200]}"
+        return response.text[:200]
 
     def _component_for(self, prop: SecurityProperty) -> str:
         return {

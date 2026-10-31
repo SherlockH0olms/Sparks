@@ -166,7 +166,7 @@ def get_manifest(target_id: str) -> dict:
 @app.post("/api/campaigns")
 def create_campaign(
     body: CampaignCreate,
-    x_idempotency_key: str = Header(default=""),
+    x_idempotency_key: str = Header(default="", alias="Idempotency-Key"),
 ) -> dict:
     if not x_idempotency_key:
         raise HTTPException(400, "Idempotency-Key başlığı zorunlu")
@@ -213,7 +213,7 @@ def _run_engine(eng: CampaignEngine, max_attempts: int | None) -> None:
 def start_campaign(
     campaign_id: str,
     background: bool = Query(default=True),
-    x_idempotency_key: str = Header(default=""),
+    x_idempotency_key: str = Header(default="", alias="Idempotency-Key"),
 ) -> ActionResponse:
     eng = require_engine(campaign_id)
     if eng.campaign.state.value not in ("draft",):
