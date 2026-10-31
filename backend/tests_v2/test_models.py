@@ -50,6 +50,18 @@ def test_timeout_is_preserved_and_charged(store):
     assert b.snapshot()["used"]["target_calls"]==1
     assert b.snapshot()["used"]["tokens"]>0
 
+
+def test_foundry_openai_v1_does_not_send_dated_api_version():
+    seen = []
+    def handler(request):
+        seen.append(request)
+        return response("READY")
+    cfg = ProviderSettings(provider="foundry", endpoint="https://example.test/openai/v1",
+                           api_key="secret", model="deployment")
+    assert ChatClient(cfg, transport=httpx.MockTransport(handler)).chat([{"role": "user", "content": "ready"}]).content == "READY"
+    assert seen[0].url.path == "/openai/v1/chat/completions"
+    assert "api-version" not in seen[0].url.params
+
 def test_local_endpoint_cannot_redirect_to_an_unregistered_host():
     with pytest.raises(ValueError): validate_local_endpoint("https://attacker.test/v1",Settings())
     with pytest.raises(ValueError): validate_local_endpoint("http://user:secret@localhost/v1",Settings())

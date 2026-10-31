@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: aegis
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: ${AEGIS_POSTGRES_PASSWORD:?Set AEGIS_POSTGRES_PASSWORD in .env}
+    volumes:
+      - aegis-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis -d aegis"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      AEGIS_DATABASE_URL: postgresql+psycopg://aegis:${AEGIS_POSTGRES_PASSWORD}@postgres:5432/aegis
+      AEGIS_ALLOWED_ORIGINS: http://127.0.0.1:3002,http://localhost:3002
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - aegis-runtime:/app/.runtime
+    ports: ["127.0.0.1:8002:8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      AEGIS_API: http://api:8000
+    ports: ["127.0.0.1:3002:3000"]
+    depends_on: [api]
+volumes:
+  aegis-postgres:
+  aegis-runtime:

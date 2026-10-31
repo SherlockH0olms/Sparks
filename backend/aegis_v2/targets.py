@@ -199,7 +199,8 @@ class LocalApplication:
                 schema_valid = False
         public_response = result.content
         if expect_json and not schema_valid and self.config.output_validation:
-            public_response = json.dumps({"answer": "", "citations": [], "task": "document_qa", "rejected": True})
+            structured = {"answer": "", "citations": [], "task": "document_qa", "rejected": True}
+            public_response = json.dumps(structured)
             schema_valid = True
         return {"status": "completed", "response": public_response, "raw_response": result.content,
                 "retrieval": [{"id": d["id"], "tenant": d["tenant"], "body_hash": digest(d["body"])} for d in selected],

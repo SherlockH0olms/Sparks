@@ -1,3 +1,9 @@
+# Güncel uygulama notu — 31 Ekim 2026
+
+Bu handbook eski uygulamanın tasarım ve kod referanslarını içerir. Çalışan v2 backend `backend/aegis_v2` altındadır; eski `backend/aegis` dizini artık kullanılmaz. Güncel kurulum [README.md](README.md), doğrulanmış teslim durumu [docs/TESLIM-2026-10-31.md](docs/TESLIM-2026-10-31.md) içindedir. Aşağıdaki eski test sayıları ve simülasyon/bellek içi durum açıklamaları v2'nin güncel durumu olarak okunmamalıdır.
+
+---
+
 # AEGIS LOOP — Ürün ve Teknik Handbook
 
 **v1.0 · Mövzu 10: Sİ modellerinin təhlükəsizliyi və AI Red Teaming**

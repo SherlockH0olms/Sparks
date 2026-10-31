@@ -1,130 +1,76 @@
-# AEGIS LOOP
+# AEGIS LOOP v2
 
-**Birleşik AI Red Teaming & Remediation Platformu**
+İzinli AI sistemleri için kapsamlı keşif, kanıt, yapılandırma düzeltmesi ve bağımsız doğrulama platformu.
 
-> Tek platform: kapsam güdümlü keşif, yeniden üretilebilir bulgu, kontrollü düzeltme deneyi
-> ve bağımsız doğrulama. Her karar sürüme, bütçeye ve kanıta bağlı.
+**Güncel kod:** `backend/aegis_v2`. Eski `aegis.api` komutları kullanılmaz. Mimari tasarım için HANDBOOK.md; çalıştırma ve doğrulanmış durum için [docs/TESLIM-2026-10-31.md](docs/TESLIM-2026-10-31.md).
 
-Mövzu 10 (AI modellerinin güvenliği ve AI Red Teaming) için geliştirilmiştir.
-MVP sınırı değil, genişleyebilir motor üzerinde uçtan uca doğrulanmış bir
-deney ve kanıt altyapısı hedeflenmiştir.
+## Windows'ta başlatma
 
-> 📘 **Teknik referans:** [HANDBOOK.md](HANDBOOK.md) — mimari, sözleşmeler, durum
-> makineleri, kapılar, API, DoD ve sınırlamalar; her madde kod karşılığı ve test
-> kanıtıyla.
-
----
-
-## Hızlı başlangıç
-
-```bash
-./run.sh                # backend (8000) + frontend (3000) tek komutla
+```powershell
+cd C:\Users\DCA_Hackathon_User\aegis-loop
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run.ps1 -Mode production -ApiPort 8002 -WebPort 3002 -Open
 ```
 
-veya ayrı ayrı:
+Varsayılan portlar 3000/8000; başka uygulama kullanıyorsa yukarıdaki 3002/8002 seçimi çalışır. `-Mode dev` geliştirme sunucusunu açar. Ctrl+C iki sunucuyu kapatır.
 
-```bash
-# Backend
-cd backend
-PYTHONPATH=. ../.venv/bin/python -m uvicorn aegis.api:app --port 8000
+## API anahtarları
 
-# Frontend
-cd frontend && npm install && npm run dev
+Proje kökündeki `.env` dosyasına yazılır; dosya Git'e alınmaz.
 
-# Demo pipeline (UI'sız, uçtan uca akış + rapor)
-cd backend && ../.venv/bin/python scripts/demo_pipeline.py
-
-# Testler
-cd backend && ../.venv/bin/python -m pytest
-```
-
----
-
-## Mimari
-
-```text
-                WEB PLATFORM (Next.js)
-    Overview · Target · Campaign · Coverage · Findings
-    Repair Lab · Verification · Report · Audit
-                        │
-                        ▼
-                 CONTROL API (FastAPI)
-     Kimlik · Yetki · İdempotency · Bütçe · Kill switch
-                        │
-                        ▼
-              CAMPAIGN CONTROLLER (engine.py)
-        Sürümlü durum makinesi + bütçe defteri + SSE
-                        │
-        ┌───────────────┼──────────────────┐
-        ▼               ▼                  ▼
-     RED LAB        REPAIR LAB       VERIFICATION LAB
-   strateji küt.    kontrol kataloğu  bağımsız oracle
-   kapsam ızg.      A/B/C/D adayları  replay/holdout
-   hafıza + sched.  kapılar + diff    adaptive + utility
-        │               │                  │
-        └───────────────┼──────────────────┘
-                        ▼
-            ORTAK KANIT ALTYAPISI (contracts)
-   Attempt · Assessment · Finding · EvidencePack · Budget
-                        │
-                        ▼
-               TARGET ADAPTER (sentetik hedef)
-      2-tenant RAG asistanı · simüle LLM · araçlar
-```
-
-## Temel tasarım ilkeleri (kodda karşılığı olan)
-
-| İlke | Karşılığı |
+| Değişken | Kullanım |
 |---|---|
-| execution_status ≠ verdict | `Attempt.execution_status` / `Attempt.verdict` ayrı alanlar; timeout saldırı engellendi demek değildir |
-| Red, oracle sırlarına erişemez | `OracleVault` rol bazlı; `secrets_for_evaluator` yalnız evaluator_service |
-| Modelin "gönderdim" demesi kanıt değildir | Değerlendirici yalnız deterministik kanıt kabul eder (tool log, retrieval log, kanarya) |
-| Girdide zaten varsa sızıntı değildir | `vault.check_leak(..., inputs=...)` girdi temizliği yapar |
-| Kapsam paydası görünür | `CoverageGrid.coverage_metrics()` — "uygulanamaz" hücre "geçti" sayılmaz |
-| Scheduler gerekçeli | Her seçimde yapılandırılmış karar kaydı (SSE'de görünür) |
-| Devam eden kampanyanın hedefi değişmez | Repair adayları baseline'ın izole kopyalarında (`SyntheticAssistant(documents, defense)`) |
-| Final doğrulama rezervi korunur | `BudgetLedger.reserve("final_verification_reserve")` |
-| COMPLETED = akış bitti, "güvenli" değil | Durum makinesi yorum taşımaz; rapor açıkça yazar |
-| Uydurma demo yüzdeleri yok | Ölçüm olmayan hücrede UI "—" gösterir |
-| Metin varyasyonu ≠ ayrı açık | Gruplama: özellik + sınır + bileşen + etki bazlı |
-| ATLAS eşlemesi gerekçelidir | `findings/atlas.py` — injection kanıtı yoksa zorla eşleme yok |
+| `AEGIS_ADMIN_TOKEN` | Uygulamaya giriş. Boşsa başlatıcı güçlü, rastgele bir değer üretir. |
+| `AEGIS_RED_ENDPOINT`, `AEGIS_RED_API_KEY`, `AEGIS_RED_MODEL` | Saldırı üreticisi. |
+| `AEGIS_JUDGE_ENDPOINT`, `AEGIS_JUDGE_API_KEY`, `AEGIS_JUDGE_MODEL` | Bağımsız semantik değerlendirici. |
+| `AEGIS_LOCAL_ENDPOINT`, `AEGIS_LOCAL_MODEL`, `AEGIS_LOCAL_API_KEY` | Test edilecek yerel hedef; kimlik doğrulama istemiyorsa son alan boş kalır. |
 
-## Hackathon gereksinimleri karşılığı
+Foundry `/models` ve `/openai/v1` adresleri desteklenir. `/openai/v1` için `AEGIS_RED_PROVIDER=foundry` / `AEGIS_JUDGE_PROVIDER=foundry` kullanılır; API sürüm parametresi eklenmez. Azure OpenAI'nin eski deployment API'si için provider `azure_openai` ve ilgili `*_DEPLOYMENT` alanları gerekir. Sunucuyu `.env` değişikliğinden sonra yeniden başlatın.
 
-| Gereksinim | Platformdaki karşılığı | Kanıt |
-|---|---|---|
-| Hedef model | Sentetik 2-tenant RAG asistan (sürümlü) | `targets/synthetic_assistant` |
-| 2–3 saldırı | 8 strateji × 3 dil × 6 özellik = 33 kapsam hücresi | `red/library.py` |
-| Nicel dayanıklılık | Kapsam %, ASR, tekrar üretim, utility, gecikme, bütçe | `coverage`, `verification` |
-| MITRE ATLAS | Sürümlü katalog + gerekçeli eşleme | `findings/atlas.py` |
-| Savunma gösterimi | A/B/C/D aday karşılaştırması + kapılar | `repair/lab.py` |
-| Otomatik rapor | Markdown + HTML + EvidencePack | `reporting/report.py` |
-
-## Demo akışı (jüri için)
-
-1. **Overview** — hedef ve sürüm görünür; "+ Yeni Kampanya" ile başlat
-2. **Campaign Console** — scheduler'ın seçim gerekçeleri canlı (SSE)
-3. **Coverage** — uygulanamaz hücreler dâhil kapsam haritası
-4. **Findings** — gruplanmış bulgular; detayda kanıt, tekrar, küçültme, ATLAS
-5. **Repair Lab** — A/B/C/D karşılaştırması; B adayının gerçek ret gerekçesi
-6. **Verification** — 4 bağımsız süit (replay/unseen/adaptive/utility)
-7. **Report** — önce/sonra; HTML indirilebilir
-8. **Audit** — denetim kaydı + kill switch
-
-## Testler
-
-```bash
-cd backend && ../.venv/bin/python -m pytest   # 14 test
+```powershell
+.\.venv-win\Scripts\python.exe scripts\setup.py --check-providers
 ```
 
-Kapsam: durum makinesi, vault izolasyonu, timeout/verdict ayrımı, saldırı
-üretimi, savunma doğrulaması, utility korunumu, deterministik tekrar, ATLAS
-gerekçesi, uçtan uca kampanya.
+Bu komut Red ve Judge'a birer kısa bağlantı isteği gönderir. Anahtarları ve yanıt gövdelerini loglamaz. Yerel modeliniz hazır olduğunda Hedefler ekranında modelin gerçek revision'ını girip bağlantıyı test edin.
 
-## Sınırlamalar (dürüstçe)
+## Açıkça etiketlenen anahtarsız demo
 
-- Hedef **simüle** bir LLM uygulamasıdır; gerçek model davranış dağılımı temsil edilmez.
-- Belgular tanımlı kapsam, erişim profili ve sürüm kümesine bağlıdır.
-- Injection desen filtresi kodlama/parafraz ile aşılabildiği için tek başına
-  güvenlik kontrolü olarak önerilmez (platform bunu da ölçer ve raporlar).
-- Bellek içi durum: yeniden başlatmada kampanyalar sıfırlanır (hakaton kapsamı).
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run.ps1 -Mode demo -ApiPort 8003 -WebPort 3003 -Open
+```
+
+Giriş: `aegis-offline-demo-access-key-2026-only`.
+
+Bu ayrı SQLite veritabanında açık **TEST FIXTURE ORTAMI** etiketiyle çalışır. Gerçek Foundry/Judge/yerel model çağrısı yapılmaz; bir bağlantı hatasında otomatik devreye girmez. Araç yetkisi, tenant izolasyonu ve çıktı şeması için 9 TR/AZ/EN kapsam hücresi, 3 bulgu, A/B/C/D deneyleri, 4 final süiti ve rapor üretir. Gerçek ve demo tarayıcı oturumlarını ayrı tutmak için gerçek adresi `127.0.0.1:3002`, demoyu `localhost:3003` ile açabilirsiniz.
+
+## Doğrulama
+
+```powershell
+cd backend
+..\.venv-win\Scripts\python.exe -m pytest --basetemp=..\.runtime\pytest-manual
+cd ..\frontend
+npm.cmd run build
+# Demo 3003/8003 üzerinde açıkken:
+$env:AEGIS_E2E_REUSE='true'
+npm.cmd run test:e2e
+```
+
+Linux/macOS: `./run.sh --mode production`. İlk çalıştırma Python sanal ortamını ve npm bağımlılıklarını kurar. GitHub Actions backend, build ve Chromium tarayıcı kontrollerini yürütür.
+
+## Mimari ve sınırlar
+
+- FastAPI + Pydantic sözleşmeleri; SQLite/PostgreSQL üzerinde kalıcı kampanya, lease, checkpoint, SSE ve audit.
+- Foundry/Azure/OpenAI uyumlu Red ve Judge; bağımsız yerel OpenAI uyumlu hedef, sürümlü RAG ve yan etkisiz mock araçlar.
+- TR/AZ/EN kapsam hücreleri; bütçeli üretim, yeniden üretim, tur azaltma ve bulgu gruplama.
+- İzinli yapılandırma yamaları, hash/diff/rollback, model smoke testi, güvenlik ve pozitif utility kapıları.
+- Dondurulmuş aday üzerinde replay, görülmemiş örnek, adaptif yeniden saldırı ve normal kullanım; boş veya hatalı testler başarı sayılmaz.
+- RBAC/workspace, HttpOnly oturum, şifreli özel kayıtlar, redakte edilen kanıt ve Markdown/HTML/JSON indirme.
+
+Düzeltmeler bu platformun yerel uygulama kontrol katmanına ait yapılandırmalardır. Genel depo kaynak kodunu otomatik değiştirme veya üretime deployment yapılmaz. Semantik Judge ayrı bir çağrı/rol ve değerlendirme protokolüdür; aynı modelin iki deployment'ta kullanılması istatistiksel bağımsızlık kanıtı değildir. Gerçek model dayanıklılığı, maliyet ve adaptif yöntem üstünlüğü için ayrıca gerçek hedef ölçümü gerekir.
+
+## Docker/PostgreSQL seçeneği
+
+`.env` içine güçlü `AEGIS_POSTGRES_PASSWORD` ekleyin; `docker compose up --build` çalıştırın. Web 3002, API 8002 portundadır. Yerel model host işletim sistemindeyse endpoint için `http://host.docker.internal:11434/v1` kullanın. Veritabanı ve vault anahtarı ayrı kalıcı volume'larda tutulur; yedekleri birlikte saklayın. Docker yapılandırması bu Windows oturumunda container çalıştırılarak doğrulanmadı.
+
+## Eşit kaynak sınırlarında karşılaştırma
+
+`scripts/benchmark.py --target-id TARGET_ID --runs 3` kayıtlı hedefin dondurulmuş kopyasında sabit test listesi, gözlemsiz model üretimi ve adaptif keşfi karşılaştırır. Ayrı benchmark veritabanı API worker'larıyla yarışmaz. Hedef revision, kapsam, kaynak sınırları ve gerçek tüketim JSON'da korunur. `--fixture --runs 1` yalnız orkestrasyonu test eder; gerçek model üstünlüğünü ölçmez. Sonuç varsayılan olarak `.runtime/benchmark.json` dosyasına yazılır. Windows'ta komutun başına `.\.venv-win\Scripts\python.exe` ekleyin.

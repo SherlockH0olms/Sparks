@@ -115,6 +115,9 @@ class Platform:
         c = self.store.get(campaign_id, workspace)
         if c.get("control"):
             raise ControlSignal(c["control"])
+        stopping = getattr(self.worker_context, "stopping", None)
+        if stopping is not None and stopping.is_set():
+            raise ControlSignal("shutdown")
 
     def phase(self, workspace, campaign_id, phase):
         self.store.mutate(campaign_id, workspace, lambda p: p | {"phase": phase, "state": phase,

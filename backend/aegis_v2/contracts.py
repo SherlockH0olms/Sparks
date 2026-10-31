@@ -156,6 +156,8 @@ class TargetCreate(Contract):
 
     @model_validator(mode="after")
     def validate_inventory(self):
+        if not self.model_revision.strip() or self.model_revision.startswith("replace-with-"):
+            raise ValueError("Supply the actual pinned model revision, not a setup placeholder.")
         ids = [d.id for d in self.documents]
         if len(ids) != len(set(ids)):
             raise ValueError("Document identifiers must be unique.")

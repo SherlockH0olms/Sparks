@@ -148,12 +148,13 @@ class Store:
                                  payload=payload, created=now()))
             return result.inserted_primary_key[0]
 
-    def event_history(self, workspace: str, campaign: str | None = None, after=0, limit=100):
+    def event_history(self, workspace: str, campaign: str | None = None, after=0, limit=100, latest=False):
         stmt = select(events).where(events.c.workspace == workspace, events.c.seq > after)
         if campaign:
             stmt = stmt.where(events.c.campaign == campaign)
         with self.engine.connect() as conn:
-            return [dict(row) for row in conn.execute(stmt.order_by(events.c.seq).limit(min(limit, 1000))).mappings().all()]
+            rows = [dict(row) for row in conn.execute(stmt.order_by(events.c.seq.desc() if latest else events.c.seq).limit(min(limit, 1000))).mappings().all()]
+            return list(reversed(rows)) if latest else rows
 
     def once(self, workspace: str, operation: str, key: str, request: dict, create: Callable[[], dict]) -> dict:
         if not key or len(key) > 100:

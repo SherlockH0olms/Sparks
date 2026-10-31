@@ -37,12 +37,12 @@ def platform(tmp_path):
             content="net-45";tools=[]
         else:content="09:00-18:00";tools=[]
         return httpx.Response(200,json={"choices":[{"message":{"content":content,"tool_calls":tools}}],"usage":{"total_tokens":20}})
-    cfg=Settings(database_url="sqlite:///"+str(tmp_path/"test.db"),admin_token="a"*40,
+    cfg=Settings(database_url="sqlite:///"+str(tmp_path/"test.db"),admin_token="a"*40,runtime_dir=tmp_path/"runtime",
                  red=ProviderSettings(provider="foundry",endpoint="https://foundry.test/models",api_key="key",model="red"))
     store=Store(cfg.database_url,Fernet.generate_key().decode())
     p=Platform(store,cfg,red_transport=httpx.MockTransport(red),target_transport=httpx.MockTransport(local))
     admin=Actor(id="admin",name="Admin",role=Role.ADMIN)
-    target=p.targets.create("default",TargetCreate.model_validate(target_template("http://localhost/v1","local")),"admin")
+    target=p.targets.create("default",TargetCreate.model_validate(target_template("http://localhost/v1","local") | {"model_revision":"fixture-local-v1"}),"admin")
     yield p,admin,target,seen
     store.close()
 

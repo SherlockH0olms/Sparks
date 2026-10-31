@@ -70,6 +70,7 @@ class Workers:
         beat.start()
         self.p.worker_context.owner=self.owner
         self.p.worker_context.campaign=cid
+        self.p.worker_context.stopping=self.stop_event
         final_job_state="queued"
         try:
             c=self.p.store.get(cid,workspace)
@@ -83,6 +84,11 @@ class Workers:
                 self.p.step(workspace,cid)
         except ControlSignal as signal:
             if signal.action=="lease_lost":
+                return
+            if signal.action=="shutdown":
+                self.p.store.mutate(cid,workspace,lambda p:p|{"state":"queued",
+                    "checkpoint":{"phase":p["phase"],"progress":p["progress"],"saved_at":now()}})
+                self.p.store.event(workspace,cid,"worker_checkpointed",{"reason":"graceful shutdown"})
                 return
             state="paused" if signal.action=="pause" else "cancelled"
             self.p.store.mutate(cid,workspace,lambda p:p|{"state":state,"finished_at":now() if state=="cancelled" else p["finished_at"],

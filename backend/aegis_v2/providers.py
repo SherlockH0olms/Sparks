@@ -53,7 +53,9 @@ class ChatClient:
             headers = {"api-key": s.api_key}
         elif s.provider == "foundry":
             url = endpoint + ("" if endpoint.endswith("/chat/completions") else "/chat/completions")
-            params = {"api-version": s.api_version}
+            # Foundry also exposes the GA OpenAI v1 API, which rejects the
+            # dated inference API's api-version query parameter.
+            params = {} if "/openai/v1" in urlsplit(endpoint).path else {"api-version": s.api_version}
             headers = {"api-key": s.api_key}
         else:
             url = endpoint + ("" if endpoint.endswith("/chat/completions") else "/chat/completions")

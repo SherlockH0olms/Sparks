@@ -334,9 +334,9 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
         return {"active":body.active}
 
     @app.get("/api/audit")
-    def audit(after_seq: int=Query(0,ge=0),limit: int=Query(100,ge=1,le=500),who: Actor=Depends(actor)):
+    def audit(after_seq: int=Query(0,ge=0),limit: int=Query(100,ge=1,le=500),latest: bool=False,who: Actor=Depends(actor)):
         require_permission(who,"admin")
-        return platform.store.event_history(who.workspace,after=after_seq,limit=limit)
+        return platform.store.event_history(who.workspace,after=after_seq,limit=limit,latest=latest)
 
     @app.get("/api/users")
     def users(who: Actor=Depends(actor)):
