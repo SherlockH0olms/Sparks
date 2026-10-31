@@ -37,7 +37,12 @@ from aegis.targets.synthetic_assistant import build_manifest
 app = FastAPI(title="AEGIS LOOP Control API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+    ],
+    allow_origin_regex=r"http://(localhost|127\\.0\\.0\\.1|[^:]+):3000",
     allow_methods=["*"],
     allow_headers=["*"],
 )

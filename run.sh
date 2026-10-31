@@ -13,7 +13,7 @@ echo "==> Backend bağımlılıkları kontrol ediliyor"
 "$PY" -c "import fastapi, uvicorn, pydantic" 2>/dev/null || "$PY" -m pip install -q -r backend/requirements.txt
 
 echo "==> Backend başlatılıyor (http://127.0.0.1:8000)"
-(cd backend && PYTHONPATH=. "$PY" -m uvicorn aegis.api:app --host 127.0.0.1 --port 8000) &
+(cd backend && PYTHONPATH=. "$PY" -m uvicorn aegis.api:app --host 0.0.0.0 --port 8000) &
 BACK_PID=$!
 trap 'kill $BACK_PID 2>/dev/null' EXIT
 
