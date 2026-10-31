@@ -195,11 +195,20 @@ Ara durumlar: PAUSED · CANCELLED · FAILED · BUDGET_EXHAUSTED
 > `COMPLETED`, bütün güvenlik özelliklerinin geçtiği anlamına gelmez; yalnızca
 > planlanan akışın tamamlandığını belirtir. Kapsam ve bulgu özeti ayrıca sunulur.
 
-**Bulgu → düzeltme:**
+**Bulgu yaşam döngüsü — kodda uygulanan biçim:**
+
+Bulgu tarafı ayrı bir durum makinesi değil, pipeline akışıdır
+(`findings/pipeline.py`): ihlal denemesi → **temiz oturumda tekrar** →
+tekrar oranı ölçülür → **küçültme** → gruba eklenir. Düzeltme adayları
+`RepairState` makinesinden geçer:
+
 ```text
-CANDIDATE → REPRODUCING → CONFIRMED → TRIAGED → REPAIR_PROPOSED
-→ PATCHED_IN_SANDBOX → VALIDATING → {VALIDATED_IN_SCOPE | MITIGATED | REJECTED | INCONCLUSIVE}
+Repair: CANDIDATE → BUILDING → {GATE_FAILED → REJECTED | BUILT → VALIDATING
+        → VALIDATED_IN_SCOPE | MITIGATED | REJECTED | INCONCLUSIVE}
 ```
+
+> `VALIDATED_IN_SCOPE`/`MITIGATED`/`REJECTED`/`INCONCLUSIVE` terminaldir;
+> yasadışı geçiş `TransitionError` fırlatır (testle kanıtlı).
 
 **Kritik sürüm kuralı:** Devam eden kampanyanın hedefi yerinde değiştirilmez.
 Adaylar baseline'ın izole kopyalarında çalışır:
@@ -558,7 +567,10 @@ sözleşmeleriydi — aksi halde her ekip farklı "bulgu" tanımı üretirdi.
 ## 16. Definition of Done
 
 #### Test ve kanıt
-- [x] Her deneme hedef/politika/oracle sürümüne bağlı (RevisionTriple)
+- [x] Kampanya hedef/politika/oracle sürümüne bağlı; tüm denemeler sürümlü
+      kampanyaya ait (RevisionTriple CampaignSpec üzerinde — `Attempt` kaydı
+      `campaign_id` ile sürümlü kampanyaya bağlanır, deneme düzeyinde ayrı
+      sürüm alanı yoktur)
 - [x] Geçersiz test, timeout ve ihlal ayrı (execution_status vs verdict)
 - [x] Red özel oracle değerlerine erişemiyor (vault rol matrisi, 403 testleri)
 - [x] Bulgu temiz oturumda tekrar deneniyor (%100 raporlanır)
