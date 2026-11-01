@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import type { Health } from "@/lib/api";
 import { Icon } from "./platform";
 import "./architecture-map.css";
@@ -23,7 +23,7 @@ function Orbit({ x, y, color, prefix, selected = false }: { x: number; y: number
       <ellipse rx="68" ry="25"/><ellipse rx="67" ry="25" transform="rotate(62)"/><ellipse rx="67" ry="25" transform="rotate(-62)"/>
     </g>
     {points.map(([px,py],i)=><circle key={i} cx={px} cy={py} r={i===3?6:4.5} fill={i%2===0?color:`url(#${prefix}-dark-sphere)`} stroke={color} strokeOpacity=".3"/>)}
-    <circle r="17" fill={`url(#${prefix}-sphere)`} stroke={color} strokeOpacity=".7"/>
+    <circle r="17" fill={`url(#${prefix}-sphere-${color.slice(1)})`} stroke={color} strokeOpacity=".7"/>
     <path d="m-8 0 8-8 8 8-8 8-8-8Zm8-8v16M-8 0H8" stroke="#f0effa" strokeWidth=".7" fill="none" opacity=".8"/>
   </g>;
 }
@@ -45,7 +45,7 @@ function ArchitectureScene({ selected, prefix }: { selected: RoleId; prefix: str
     <desc id={`${prefix}-description`}>Red reads a scoped manifest and writes attacks through AEGIS to the target. Public target responses can feed attack adaptation. Independent evaluation reads the recorded observations and protected oracle. Findings, controls and verification results connect to the evidence chain.</desc>
     <defs>
       <pattern id={`${prefix}-grid`} width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="#34404d" strokeWidth=".5"/></pattern>
-      <radialGradient id={`${prefix}-sphere`} cx="32%" cy="20%"><stop stopColor="#dfd7ff"/><stop offset=".5" stopColor="#a18ade"/><stop offset="1" stopColor="#55447e"/></radialGradient>
+      {Object.values(colors).map(color=><radialGradient key={color} id={`${prefix}-sphere-${color.slice(1)}`} cx="32%" cy="20%"><stop stopColor="#e8eaf4"/><stop offset=".48" stopColor={color}/><stop offset="1" stopColor="#263140"/></radialGradient>)}
       <radialGradient id={`${prefix}-dark-sphere`} cx="25%" cy="20%"><stop stopColor="#69737d"/><stop offset=".5" stopColor="#27313a"/><stop offset="1" stopColor="#11171c"/></radialGradient>
       <linearGradient id={`${prefix}-floor`} x2="1" y2="1"><stop stopColor="#232a36"/><stop offset="1" stopColor="#121a24"/></linearGradient>
       {Object.entries(colors).map(([id,color])=><marker key={id} id={`${prefix}-arrow-${id}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="m1 1 7 4-7 4" fill="none" stroke={color} strokeWidth="1.5"/></marker>)}
@@ -98,7 +98,7 @@ function ArchitectureScene({ selected, prefix }: { selected: RoleId; prefix: str
 
     <g fill="#e5eaf1" fontSize="15">
       <text x="185" y="270" textAnchor="middle">Red model</text>
-      <text x="551" y="173" textAnchor="middle" fontSize="13">AEGIS Loop</text>
+      <text x="551" y="68" textAnchor="middle" fontSize="13">AEGIS Loop</text>
       <text x="914" y="258" textAnchor="middle">Target application</text>
       <text x="922" y="480" textAnchor="middle">Independent evaluation</text>
     </g>
