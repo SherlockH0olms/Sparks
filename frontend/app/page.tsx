@@ -1,17 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { CampaignRow, Target, dateTime, percent } from "@/lib/api";
-import { Badge, Button, Empty, Heading, Icon, Panel, QueryError, Stat, useAuth, useData, useCampaignId } from "@/components/platform";
+import { CampaignRow, Target, dateTime } from "@/lib/api";
+import { Badge, Button, Empty, Icon, Panel, QueryError, useAuth, useData, useCampaignId } from "@/components/platform";
 import { CreateCampaign } from "@/components/create-campaign";
 import { RedLibrary } from "@/components/red-library";
-import { GettingStarted } from "@/components/getting-started";
+import { WorkspaceSummary } from "@/components/workspace-summary";
 import { ArchitectureMap } from "@/components/architecture-map";
 import { campaignName, targetName } from "@/lib/registration-names";
 export default function Overview(){
- const targets=useData<Target[]>("/targets",10000);const campaigns=useData<CampaignRow[]>("/campaigns",5000);const {health,user}=useAuth();const [create,setCreate]=useState(false);const [campaignId,select]=useCampaignId();const rows=campaigns.data??[];const latest=rows[0];const active=rows.filter(c=>!["completed","failed","cancelled","budget_exhausted","draft","paused"].includes(c.state)).length;
- return <><Heading eyebrow="SECURITY CONTROL PLANE" title="Your AI security workspace" description="Discover weaknesses with Red, test your local application, and verify improvements with fresh evidence." action={<Button variant="primary" disabled={user?.role==="viewer"||!targets.data?.length} onClick={()=>setCreate(true)}><Icon name="plus"/>New campaign</Button>}/>
- <QueryError error={targets.error||campaigns.error}/><GettingStarted/><div className="stats"><Stat title="Registered targets" value={targets.data?.length??"—"} hint="Saved model connections and application snapshots"/><Stat title="Active campaigns" value={active} hint={rows.length+" saved campaigns"} tone="cyan"/><Stat title="Confirmed findings" value={rows.reduce((n,c)=>n+c.findings,0)} hint="Violations confirmed in fresh sessions" tone="red"/><Stat title="Latest campaign coverage" value={latest?percent(latest.coverage.coverage_pct==null?null:latest.coverage.coverage_pct/100):"—"} hint={latest?latest.coverage.completed+" / "+latest.coverage.applicable+" applicable cells":"No measurements yet"} tone="blue"/></div>
+ const targets=useData<Target[]>("/targets",10000);const campaigns=useData<CampaignRow[]>("/campaigns",5000);const {health,user}=useAuth();const [create,setCreate]=useState(false);const [campaignId,select]=useCampaignId();const rows=campaigns.data??[];const latest=rows[0];
+ return <><WorkspaceSummary health={health} targets={targets.data??null} campaigns={campaigns.data??null} canCreate={user?.role!=="viewer"} onCreate={()=>setCreate(true)}/>
+ <QueryError error={targets.error||campaigns.error}/>
  <ArchitectureMap health={health} targetCount={targets.data?.length??0} campaignId={campaignId??latest?.id}/>
  <RedLibrary />
  <div className="grid-2"><Panel title="Recent campaigns" subtitle="Live status, measured coverage, and confirmed findings" action={<Link className="link" href="/campaign">Open the console →</Link>}>{rows.length?<div className="table-wrap"><table><thead><tr><th>Campaign</th><th>Status</th><th>Coverage</th><th>Findings</th></tr></thead><tbody>{rows.slice(0,6).map(c=><tr key={c.id}><td><Link className="link" href={"/campaign?campaign="+c.id} onClick={()=>select(c.id)}>{campaignName(c)}</Link><div className="tiny muted">{c.target_name??c.target_model}</div><div className="tiny muted">{dateTime(c.created_at)}</div></td><td><Badge value={c.state}/></td><td>{c.coverage.completed} / {c.coverage.applicable}</td><td>{c.findings}</td></tr>)}</tbody></table></div>:<Empty title="Your first campaign will appear here" action={<Link className="button" href="/target"><Icon name="target"/>Add local target</Link>}>Register a target endpoint and define its expected behavior. Then create and start a campaign.</Empty>}</Panel>

@@ -63,7 +63,11 @@
     ".next-release-main-20261101-085112-931896/types/**/*.ts",
     ".next-release-main-20261101-085112-931896/dev/types/**/*.ts",
     ".next-release-main-20261101-085336-726607/types/**/*.ts",
-    ".next-release-main-20261101-085336-726607/dev/types/**/*.ts"
+    ".next-release-main-20261101-085336-726607/dev/types/**/*.ts",
+    ".next-workspace-preview/types/**/*.ts",
+    ".next-workspace-preview/dev/types/**/*.ts",
+    ".next-release-main-20261101-091552-259828/types/**/*.ts",
+    ".next-release-main-20261101-091552-259828/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
