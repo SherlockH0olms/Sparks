@@ -49,7 +49,9 @@
     ".next-release-main-20261101-065003-150442/types/**/*.ts",
     ".next-release-main-20261101-065003-150442/dev/types/**/*.ts",
     ".next-live/types/**/*.ts",
-    ".next-live/dev/types/**/*.ts"
+    ".next-live/dev/types/**/*.ts",
+    ".next-release-main-20261101-071059-422653/types/**/*.ts",
+    ".next-release-main-20261101-071059-422653/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

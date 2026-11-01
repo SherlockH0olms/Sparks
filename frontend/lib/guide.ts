@@ -26,7 +26,7 @@ export const guideSteps: GuideStep[] = [
     purpose:"A target record tells AEGIS how to reach the model, what it is allowed to do, and which documents and tools belong to each user group.",
     actions:[
       "Start a model API server, then select Add target on Targets. Choose localhost, LAN, Tailscale, Cloudflare, ngrok, Kaggle/Colab tunnel, or Custom. Registration connects to your server; it does not download model weights.",
-      "Select OpenAI-compatible chat (usually a /v1 base) or native Ollama (server root). Enter the actual URL, model identifier, pinned weight version, application version, and task policy. Choose environment authentication, no API key, or a target-specific key. Cloudflare Access service tokens use the separate client ID and secret fields.",
+      "Select OpenAI-compatible chat (usually a /v1 base) or native Ollama (server root). Enter the actual URL, model identifier, application version, and task policy. The model version is optional; leave it blank if you do not have a release tag or weight hash. Choose environment authentication, no API key, or a target-specific key. Cloudflare Access service tokens use the separate client ID and secret fields.",
       "In Documents and tasks, expand a document card to edit its title, owner group, and content. Enable Allow Red to edit only for documents assigned to injection testing. Add normal-use tasks with a user question, group, and expected answer terms, one phrase per line. No JSON editing is required.",
       "In Access and controls, declare the capabilities your application actually supports, its starting defenses, writable attack surfaces, and feedback available to Red. Review the snapshot and select Save target.",
       "Select Test connection on the target card. A successful check confirms that the registered target responds from the platform backend. Resolve connection errors before creating a campaign.",
@@ -34,7 +34,7 @@ export const guideSteps: GuideStep[] = [
     ],
     expected:"A versioned target appears in the registry with a connection check result, document count, and normal-use test count.",
     terms:[
-      {name:"Pinned model version",explanation:"A fixed release, revision, or weight hash. It identifies the model used in these results."},
+      {name:"Pinned model version",explanation:"Optional fixed release, revision, or weight hash. Leave blank to test without pinning the exact model weights."},
       {name:"Tenant",explanation:"A separate data ownership group, such as two customers. Cross-tenant tests check whether one group can access another group's data."},
       {name:"Normal-use test",explanation:"A legitimate task with expected answer terms or an allowed tool action. These tests measure whether a defense preserves useful behavior."},
       {name:"Snapshot",explanation:"The recorded model, application rules, data, and access profile used by a campaign. Create a new target record to test a changed version."},

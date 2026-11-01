@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, Actor, CampaignRow, Health, label, dateTime } from "@/lib/api";
 import { PageHelp } from "./page-help";
+import { campaignOption } from "@/lib/registration-names";
 
 type AuthState = { user: Actor | null; health: Health | null; loading: boolean; login: (key: string) => Promise<void>; logout: () => Promise<void> };
 const AuthContext = createContext<AuthState | null>(null);
@@ -71,7 +72,7 @@ export function useCampaignId(): [string | null, (id: string) => void] {
 }
 export function CampaignPicker({ value, onChange }: { value: string | null; onChange: (id: string) => void }) {
   const rows = useData<CampaignRow[]>("/campaigns", 5000);
-  return <select aria-label="Active campaigns" className="campaign-picker" value={value ?? ""} onChange={e => onChange(e.target.value)}><option value="">Select a campaign</option>{rows.data?.map(c => <option key={c.id} value={c.id}>{c.id.slice(-8)} · {label(c.state)}</option>)}</select>;
+  return <select aria-label="Active campaigns" className="campaign-picker" value={value ?? ""} onChange={e => onChange(e.target.value)}><option value="">Select a campaign</option>{rows.data?.map(c => <option key={c.id} value={c.id}>{campaignOption(c)} · {label(c.state)}{c.is_latest ? " · Latest test" : ""}</option>)}</select>;
 }
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, health, loading, logout } = useAuth(); const pathname = usePathname(); const [cid, setCid] = useCampaignId();

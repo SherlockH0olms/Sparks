@@ -40,7 +40,7 @@ test("target wizard and campaign start use the authenticated API", async ({ page
   await page.goto("/target");
   await page.getByRole("button", { name: "Add target", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByRole("dialog").getByRole("alert")).toContainText("pinned model version");
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText("model name");
   await page.getByLabel("Model", { exact: true }).fill("offline-fixture");
   await page.getByLabel("Pinned model version", { exact: true }).fill("fixture-browser-v2");
   await page.getByLabel("API base URL", { exact: true }).fill("http://localhost/v1");
@@ -286,6 +286,57 @@ test("Granite template restores a registered URL without browser storage",async(
   await page.getByRole("button",{name:"Review or customize setup",exact:true}).click();
   await expect(page.getByLabel("API base URL",{exact:true})).toHaveValue("https://my-new-granite.ngrok-free.app/v1");
   await expect(page.getByLabel("Model",{exact:true})).toHaveValue("granite-4.2-8b");
+});
+
+test("numbered targets and test names replace opaque IDs in selection and activity",async({page})=>{
+  await login(page);
+  const template=await(await page.request.get("/api/setup/target-template")).json();
+  const body={...template,name:"Support naming test",model:"offline-fixture",model_revision:""};
+  const first=await(await page.request.post("/api/targets",{headers:{"Idempotency-Key":crypto.randomUUID()},data:body})).json();
+  const second=await(await page.request.post("/api/targets",{headers:{"Idempotency-Key":crypto.randomUUID()},data:body})).json();
+  expect(second.display_name).not.toBe(first.display_name);
+  expect(second.display_name).toMatch(/Support naming test \d+$/);
+  const campaign=await(await page.request.post("/api/campaigns",{headers:{"Idempotency-Key":crypto.randomUUID()},data:{target_id:second.id,languages:["en"],properties:["tool_authorization"],families:["tool_misuse"]}})).json();
+  await page.goto(`/campaign?campaign=${campaign.id}`);
+  const picker=page.getByLabel("Active campaigns",{exact:true});
+  await expect(picker.locator(`option[value="${campaign.id}"]`)).toContainText(campaign.display_name);
+  await expect(page.locator("main").getByText(campaign.display_name,{exact:true})).toBeVisible();
+  const options=await picker.locator("option").allTextContents();
+  expect(options.slice(1).every(text=>text.startsWith("Test "))).toBe(true);
+  expect(options.join(" ")).not.toMatch(/campaign_[a-f\d]+|target_[a-f\d]+/);
+  expect(options.join(" ")).toContain(second.display_name);
+  await expect(picker.locator(`option[value="${campaign.id}"]`)).toContainText("Latest test");
+  expect(await page.locator("main").innerText()).not.toContain(campaign.id);
+  await page.getByRole("button",{name:"New campaign",exact:true}).click();
+  const targetPicker=page.getByLabel("Target",{exact:true});
+  await expect(targetPicker.locator(`option[value="${second.id}"]`)).toContainText(second.display_name);
+  await expect(targetPicker.locator(`option[value="${second.id}"]`)).toContainText("Latest");
+  const firstDetail=await(await page.request.get(`/api/targets/${first.id}`)).json();
+  await expect(targetPicker.locator(`option[value="${first.id}"]`)).toContainText(firstDetail.display_name);
+});
+
+test("a target without a pinned model version can start and finish a test",async({page})=>{
+  await login(page);
+  await page.goto("/target");
+  await page.getByRole("button",{name:"Add target",exact:true}).click();
+  await page.getByLabel("Target name",{exact:false}).fill("Unpinned browser target");
+  await page.getByLabel("Model",{exact:true}).fill("offline-fixture");
+  await page.getByLabel("API base URL",{exact:true}).fill("http://localhost/v1");
+  await expect(page.getByLabel("Pinned model version",{exact:true})).toHaveValue("");
+  for(let i=0;i<3;i++)await page.getByRole("button",{name:"Continue",exact:true}).click();
+  await expect(page.getByLabel("Target summary")).toContainText("Not specified");
+  const registeredResponse=page.waitForResponse(r=>new URL(r.url()).pathname==="/api/targets"&&r.request().method()==="POST");
+  await page.getByRole("button",{name:"Save target",exact:true}).click();
+  const registered=await(await registeredResponse).json();
+  expect(registered.model_revision).toBe("");
+  const preflight=await(await page.request.post(`/api/targets/${registered.id}/preflight`)).json();
+  expect(preflight.connected).toBe(true);
+  await page.goto(`/campaign?target=${registered.id}`);
+  await page.getByLabel("Test depth",{exact:true}).selectOption("smoke");
+  for(const property of ["Task adherence","Data and instruction separation","Tenant isolation","Secret confidentiality","Output integrity","Session isolation"])await page.getByRole("checkbox",{name:property,exact:true}).uncheck();
+  for(const family of ["Direct prompt injection","Document injection","Authority spoofing","Multi-turn manipulation","Encoding evasion","Cross-tenant probing","Schema abuse"])await page.getByRole("checkbox",{name:family,exact:true}).uncheck();
+  await page.getByRole("button",{name:"Create and start test",exact:true}).click();
+  await expect.poll(async()=>{const id=new URL(page.url()).searchParams.get("campaign");return id?(await(await page.request.get(`/api/campaigns/${id}`)).json()).state:null;},{timeout:45000}).toBe("completed");
 });
 
 test("report presentation preview and binary exports work on desktop and mobile",async({page})=>{

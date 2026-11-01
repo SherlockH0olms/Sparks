@@ -172,7 +172,7 @@ The four-step target wizard uses document and normal-task forms, followed by a r
 
 **OpenAI-compatible chat** appends `/chat/completions` to the API base. Suitable server configurations include vLLM, llama.cpp, LM Studio, and Ollama's compatibility API. **Native Ollama** uses `SERVER_ROOT/api/chat`; enter a root such as `http://127.0.0.1:11434` without `/v1`. Both issue non-streaming inference requests. Hosting labels do not translate arbitrary RPC protocols.
 
-Registration includes task policy, application revision, attacker tenant, document ownership, confidentiality, utility tasks, capabilities, starting defenses, writable surfaces, and allowed feedback. Supply the exact model ID and actual pinned revision rather than a setup placeholder. Connection testing happens from the backend, so browser access alone does not establish reachability.
+Registration includes task policy, application revision, attacker tenant, document ownership, confidentiality, utility tasks, capabilities, starting defenses, writable surfaces, and allowed feedback. Supply the exact model ID. The model revision is optional: leave it blank if you do not have a release tag or weight hash; registration and testing remain available, and the version appears as **Not specified**. Connection testing happens from the backend, so browser access alone does not establish reachability.
 
 If native `tool_calls` are unavailable, select the **explicit JSON application adapter**. Only valid structured requests create gateway effects; prose claims of sending/exporting do not. The built-in `email_send(to, body)` and `doc_export(document_id)` gateways are simulated and do not send real email.
 
@@ -181,6 +181,8 @@ Additional private hostnames use `AEGIS_LOCAL_ALLOWED_HOSTS`; supported LAN/Tail
 ## Platform walkthrough
 
 The sidebar's **How to use** guide explains the entire workflow. Every page includes **How to use this page**; Overview also provides onboarding instructions.
+
+Repeated target names receive chronological suffixes such as **Support assistant 1**, **Support assistant 2**. **Latest** marks the newest registered version of each model. Campaigns use **Test 1**, **Test 2**, and the target name; technical IDs remain in expandable details. Naming is derived from saved registration order across all pages, so refreshes do not reset the sequence.
 
 On this Windows workspace, **Open AEGIS Live.cmd** opens the full English platform using the saved live Granite workspace. **3002/8008 are preferred web/API ports**, with automatic fallback when occupied. The actual link is printed and saved in `.runtime/PLATFORM-URL.txt` and `.runtime/OPEN-PLATFORM.url`. Double-clicking again reuses a healthy instance of the selected release. A launch lock prevents simultaneous updates; identified workspace backends with active campaigns are preserved. Unrelated applications are left running.
 

@@ -45,8 +45,11 @@ let browser;
   const targetsResponse = await page.request.get(base + '/api/targets');
   const targets = await targetsResponse.json();
   if (!targetsResponse.ok() || !targets.some(t => t.model === 'granite-4.2-8b')) throw new Error('The live registry does not contain the saved Granite target.');
+  if (targets.some(t => !t.display_name)) throw new Error('Readable target names are missing from the running backend.');
+  result.targets = targets.map(t => ({ name: t.display_name, model: t.model, latest: t.is_latest_for_model }));
   const campaignsResponse = await page.request.get(base + '/api/campaigns');
   const campaigns = await campaignsResponse.json();
+  if (campaigns.some(c => !/^Test \d+$/.test(c.display_name || ''))) throw new Error('Readable test numbers are missing from the running backend.');
   const campaign = campaigns.find(c => c.state === 'completed') || campaigns[0];
   const suffix = campaign ? '?campaign=' + encodeURIComponent(campaign.id) : '';
   for (const route of ['/', '/target', '/campaign', '/coverage', '/findings', '/repair', '/verification', '/report', '/guide', '/audit']) {
@@ -75,6 +78,22 @@ let browser;
     }
   }
   if (result.issues.length) throw new Error('The live pages reported JavaScript errors.');
+  await page.goto(base + '/campaign' + suffix);
+  await page.getByRole('button', { name: 'New campaign', exact: true }).click();
+  const targetOptions = await page.getByLabel('Target', { exact: true }).locator('option').allTextContents();
+  if (new Set(targetOptions).size !== targetOptions.length || !targetOptions.some(t => t.includes('Latest'))) throw new Error('Target selection does not distinguish registrations and the latest model.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  const testOptions = await page.getByLabel('Active campaigns', { exact: true }).locator('option').allTextContents();
+  if (testOptions.slice(1).some(t => !t.startsWith('Test '))) throw new Error('Campaign selection still shows technical IDs.');
+  await page.goto(base + '/target' + suffix);
+  await page.getByRole('button', { name: 'Add target', exact: true }).click();
+  if (await page.getByLabel('Pinned model version', { exact: true }).inputValue() !== '') throw new Error('The optional model version did not start empty.');
+  await page.getByLabel('Model', { exact: true }).fill('granite-4.2-8b');
+  await page.getByRole('dialog').getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByLabel('Document editor', { exact: true }).waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+  result.readable_names = true;
+  result.optional_model_version = true;
   await page.goto(base + '/');
   await page.locator('main h1').waitFor({ timeout: 15000 });
   await page.screenshot({ path: path.join(root, '.runtime', 'live-platform-verified.png'), fullPage: true });

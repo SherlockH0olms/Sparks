@@ -32,6 +32,17 @@ function Read-WorkspaceState {
     return $null
 }
 
+function Stop-OwnedWorkspaceProcess([int]$ProcessId) {
+    # Callers must verify project ownership and workspace state before calling.
+    try { Stop-Process -Id $ProcessId -ErrorAction Stop }
+    catch {
+        # Some managed Windows sessions fail inside Stop-Process. The native
+        # command targets the same verified PID, without terminating a tree.
+        & taskkill.exe /PID $ProcessId /F | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "Windows could not stop the verified AEGIS process $ProcessId." }
+    }
+}
+
 function Test-OwnedBackend([int]$ProcessId, [int]$Port, $Health, $State) {
     # A fresh, random instance ID ties a saved launch record to the current listener.
     if ($State -and $State.source -eq $taskRepoRoot -and $State.runtime_dir -eq $taskRuntime -and
@@ -88,7 +99,7 @@ function Remove-ObsoleteTurkishInterface([string]$CurrentUrl) {
             Write-Warning 'The obsolete Turkish interface could not be identified safely. Use the verified English address shown below.'
             return
         }
-        Stop-Process -Id $legacyProcessId
+        Stop-OwnedWorkspaceProcess $legacyProcessId
         Write-Host 'The obsolete Turkish interface has been retired. Saved evidence is preserved.'
     } catch {
         Write-Warning 'The obsolete interface could not be retired automatically. Use the verified English address shown below.'
@@ -127,6 +138,12 @@ try {
         finally { Pop-Location }
     }
     $taskState = Read-WorkspaceState
+    if ($taskState -and $taskState.source -eq $taskRepoRoot -and $taskState.runtime_dir -eq $taskRuntime) {
+        # Reuse the last workspace address during an update unless overridden.
+        # If either port was taken, the Python launcher still selects a free one.
+        if (-not $PSBoundParameters.ContainsKey('ApiPort')) { $ApiPort = [int]$taskState.api_port }
+        if (-not $PSBoundParameters.ContainsKey('WebPort')) { $WebPort = [int]$taskState.web_port }
+    }
     if ($taskState -and $taskState.status -eq 'ready' -and $taskState.source -eq $taskRepoRoot -and
         $taskState.runtime_dir -eq $taskRuntime -and $taskState.release -eq $taskDistDir) {
         $taskHealth = Get-WorkspaceHealth $taskState.platform_url
@@ -151,7 +168,7 @@ try {
         if ($taskHealth.workers.active_jobs -gt 0) { throw 'Pause active campaigns before updating the live workspace. Their records are preserved.' }
         Write-Host "Updating the verified AEGIS backend on port $taskPort."
         $taskOwnedProcess = Get-Process -Id $taskApiPid
-        Stop-Process -Id $taskApiPid
+        Stop-OwnedWorkspaceProcess $taskApiPid
         if (-not $taskOwnedProcess.WaitForExit(10000)) { throw 'The previous AEGIS backend did not stop. A duplicate worker was not started.' }
         if ($taskState -and $taskState.backend_pid -eq $taskApiPid) {
             # Its own supervisor shuts down its own frontend and publishes stopped
