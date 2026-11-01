@@ -1,0 +1,38 @@
+.architecture-map{--architecture-paper:#121821;position:relative;background:var(--architecture-paper);border:1px solid #34404f;border-radius:5px;overflow:hidden;margin:25px 0;color:#e7edf5}
+.architecture-header{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:29px 30px 27px;border-bottom:1px solid #33404e;background:linear-gradient(115deg,#1b2330,#121923 65%)}
+.architecture-kicker{display:block;color:#8494aa;font:9px/1.5 Consolas,monospace;letter-spacing:1.7px}
+.architecture-header h2{font-size:27px;font-weight:400;letter-spacing:-.9px;line-height:1.25;margin-top:7px}
+.architecture-header p{font-size:11px;color:#8898ad;margin-top:9px}
+.architecture-health{position:relative;padding-left:14px;color:#bbcabf;font:10px/1.5 Consolas,monospace;white-space:nowrap}
+.architecture-health>span{position:absolute;left:0;top:5px;width:5px;height:5px;border-radius:50%;background:#8090a4}
+.architecture-health>.architecture-online{background:#85cbb5;box-shadow:0 0 12px #85cbb540}
+.architecture-health small{display:block;font:9px/1.5 Consolas,monospace;color:#77869a;margin-top:4px}
+.architecture-role-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:0 17px;background:#171f29;border-bottom:1px solid #34404e}
+.architecture-role{--role-color:#ad98f6;min-width:0;padding:20px 14px 18px;background:none;color:#b2becd;border:0;border-bottom:2px solid transparent;text-align:left;transition:background .2s,border-color .2s}
+.architecture-role:hover{background:#ffffff06}.architecture-role.is-selected{background:#ffffff09;border-bottom-color:var(--role-color)}
+.architecture-role-rule{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid #44515f;color:#8291a3;font:8px/1.5 Consolas,monospace;text-transform:uppercase;letter-spacing:.6px}
+.architecture-role-rule>span:first-child{font-size:10px;color:var(--role-color)}.architecture-role-rule svg{margin-left:auto;flex:none;transform:rotate(-35deg)}
+.architecture-role strong{display:block;color:#e5eaf2;font-size:16px;font-weight:400;letter-spacing:-.35px;margin-top:12px}
+.architecture-model{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8f9caf;font:10px/1.8 Consolas,monospace;margin-top:4px}
+.architecture-role-status{display:flex;gap:6px;align-items:center;font-size:8px;letter-spacing:.25px;color:#8492a6;margin-top:10px}
+.architecture-role-status i{width:4px;height:4px;border-radius:50%;background:currentColor}.architecture-role-status.is-ready{color:#96bdae}
+.architecture-drawing{position:relative;background:radial-gradient(ellipse at 48% 43%,#27203738,transparent 52%),linear-gradient(#141b25,#101620);padding:6px 15px 10px}
+.architecture-scene{display:block;width:100%;height:auto;font-family:Arial,Helvetica,sans-serif;overflow:visible}
+.architecture-route{opacity:.35;transition:opacity .25s}.architecture-route.is-emphasized{opacity:1}
+.architecture-flow{animation:architecture-feedback 36s linear infinite}
+.architecture-mobile-mark{display:none}
+.architecture-inspector{--role-color:#ad98f6;display:grid;grid-template-columns:205px minmax(0,1fr) auto;gap:22px;align-items:center;padding:22px 30px;background:#19212c;border-top:1px solid #384455;border-bottom:1px solid #384455}
+.architecture-inspector-title{display:flex;gap:12px;align-items:center;min-width:0}.architecture-inspector-icon{display:grid;place-items:center;flex:none;width:39px;height:42px;border:1px solid #526171;clip-path:polygon(0 0,83% 0,100% 17%,100% 100%,0 100%);color:var(--role-color);background:#ffffff03}
+.architecture-inspector-title h3{font-size:13px;line-height:1.4;font-weight:500;margin-top:3px}.architecture-inspector-title .architecture-kicker{font-size:7px;letter-spacing:1.1px}
+.architecture-inspector-body p{font-size:10px;line-height:1.7;max-width:630px;color:#a0aebf}
+.architecture-permissions{display:flex;gap:17px;flex-wrap:wrap;margin-top:10px}.architecture-permissions>span{font-size:9px;color:#8d9caf}.architecture-permissions b{font:8px Consolas,monospace;font-weight:400;color:var(--role-color);margin-right:7px;letter-spacing:.7px}
+.architecture-detail-link{display:flex;gap:9px;align-items:center;font-size:9px;color:var(--role-color);white-space:nowrap;padding:10px 0;border-bottom:1px solid #5b4d7550}
+.architecture-detail-link:hover{color:#fff}.architecture-detail-link svg{flex:none}
+.architecture-footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:11px;padding:13px 30px 14px;background:#10161e;color:#7e8ea2;font:8px/1.5 Consolas,monospace;letter-spacing:.4px}
+.architecture-footer>span{display:flex;gap:8px;align-items:center}.architecture-footer i{width:3px;height:11px;display:inline-block}
+@keyframes architecture-feedback{to{stroke-dashoffset:-144}}
+@media(min-width:1600px){.architecture-inspector-body p{font-size:11px}.architecture-model{font-size:11px}.architecture-role-rule{font-size:9px}.architecture-detail-link{font-size:10px}.architecture-inspector-title h3{font-size:15px}.architecture-footer{font-size:9px}}
+@media(max-width:1150px){.architecture-inspector{grid-template-columns:175px minmax(0,1fr);gap:15px}.architecture-detail-link{grid-column:2;justify-self:start;padding:0 0 6px}.architecture-role-rule>span:nth-child(2){letter-spacing:0;font-size:7px}.architecture-role strong{font-size:14px}.architecture-header h2{font-size:24px}.architecture-role-nav{padding:0 9px}.architecture-role{padding-left:10px;padding-right:10px}}
+@media(max-width:760px){.architecture-header{padding:23px 20px;align-items:flex-start;gap:14px}.architecture-header h2{font-size:22px}.architecture-header p{font-size:10px}.architecture-health{font-size:8px}.architecture-health small{font-size:8px}.architecture-kicker{font-size:8px}.architecture-role-nav{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 10px}.architecture-role{padding:15px 10px 13px}.architecture-role-rule>span:nth-child(2){font-size:8px}.architecture-role strong{font-size:14px}.architecture-model{font-size:9px}.architecture-scene{display:none}.architecture-mobile-mark{display:flex;flex-direction:column;align-items:center;padding:9px 0 24px}.architecture-mobile-mark svg{width:290px;max-width:100%;height:210px}.architecture-mobile-mark>span{font:8px Consolas,monospace;color:#9ba9bf;letter-spacing:1px;text-transform:uppercase}.architecture-mobile-mark>strong{font-size:20px;letter-spacing:-.4px;font-weight:400;margin-top:8px}.architecture-inspector{grid-template-columns:1fr;padding:20px;gap:15px}.architecture-inspector-title h3{font-size:15px}.architecture-inspector-body p{font-size:11px}.architecture-permissions{gap:10px}.architecture-permissions>span{font-size:10px}.architecture-detail-link{grid-column:1;font-size:11px;padding:5px 0 8px}.architecture-footer{padding:15px 20px;font-size:8px;gap:11px}}
+@media(max-width:420px){.architecture-header{display:block}.architecture-health{margin-top:15px;font-size:9px}.architecture-health small{display:inline;margin-left:10px}.architecture-role-rule>span:nth-child(2){font-size:7px}.architecture-role-rule{gap:6px}}
+@media(prefers-reduced-motion:reduce){.architecture-flow{animation:none}.architecture-route,.architecture-role{transition:none}}
