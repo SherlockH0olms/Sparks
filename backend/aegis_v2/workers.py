@@ -6,7 +6,7 @@ from .budget import Budget, BudgetExceeded
 from .contracts import new_id, now
 from .runtime import ControlSignal, TERMINAL
 from .storage import Conflict
-from .providers import TargetUnavailable
+from .providers import TargetUnavailable, TransientProviderError
 
 
 class Workers:
@@ -102,6 +102,14 @@ class Workers:
                 "checkpoint": {"phase": p["phase"], "progress": p["progress"], "saved_at": now(), "reason": "target_connection"}})
             self.p.store.event(workspace, cid, "target_connection_paused", {"phase": self.p.store.get(cid, workspace)["phase"],
                 "action": "Check the target connection and resume this campaign."})
+            final_job_state = "paused"
+        except TransientProviderError as exc:
+            self.p.store.mutate(cid, workspace, lambda p: p | {"state": "paused", "control": None,
+                "error": {"type": "TransientProviderError", "message": str(exc)},
+                "checkpoint": {"phase": p["phase"], "progress": p["progress"], "saved_at": now(), "reason": "provider_connection"}})
+            self.p.store.event(workspace, cid, "provider_connection_paused", {
+                "phase": self.p.store.get(cid, workspace)["phase"],
+                "action": "Wait for the provider to recover, then resume this campaign."})
             final_job_state = "paused"
         except Exception as exc:
             state="budget_exhausted" if isinstance(exc,BudgetExceeded) else "failed"

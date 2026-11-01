@@ -105,11 +105,12 @@ class Platform:
             self.store.mutate(campaign_id, actor.workspace, lambda p: p | {"state": "queued", "started_at": now()})
             self.store.mutate("job_" + campaign_id, actor.workspace, lambda p: p | {"state": "queued"})
         elif action == "resume":
-            if c["state"] != "paused":
-                raise Conflict("Only a paused campaign can be resumed.")
+            retryable = (c.get("error") or {}).get("type") in {"TargetUnavailable", "TransientProviderError"}
+            if c["state"] != "paused" and not (c["state"] == "failed" and retryable):
+                raise Conflict("Only a paused campaign or a temporary provider failure can be resumed.")
             self.store.mutate(campaign_id, actor.workspace, lambda p: p | {"state": "queued", "control": None,
-                "connection_epoch": p.get("connection_epoch", 0) + int((p.get("error") or {}).get("type") == "TargetUnavailable"),
-                "error": None if (p.get("error") or {}).get("type") == "TargetUnavailable" else p.get("error")})
+                "connection_epoch": p.get("connection_epoch", 0) + int(retryable),
+                "error": None if retryable else p.get("error"), "finished_at": None})
             self.store.mutate("job_" + campaign_id, actor.workspace, lambda p: p | {"state": "queued", "owner": None, "lease_until": 0})
         elif action == "pause":
             if c["state"] in TERMINAL or c["state"] in {"draft", "paused"}:
@@ -274,6 +275,10 @@ class Platform:
             observations.append(row)
         return observations
 
+    def generation_operation(self, campaign, identity):
+        epoch = campaign.get("connection_epoch", 0)
+        return digest(identity + ("_connection_" + str(epoch) if epoch else ""))[:40]
+
     def discovery_step(self,workspace,campaign_id):
         c=self.store.get(campaign_id,workspace)
         index=c["progress"]["discovery"]
@@ -288,7 +293,7 @@ class Platform:
         self.store.event(workspace,campaign_id,"scheduler_decision",{"cell_id":cell["id"],"reason":reason,"language":cell["language"],"property":cell["property"]})
         try:
             candidate=self.generator(workspace).generate(cell,snapshot,c["spec"],self.public_observations(workspace,campaign_id),
-                                 budget,"discovery",digest(campaign_id+"_generate_"+str(index))[:40])
+                                 budget,"discovery",self.generation_operation(c,campaign_id+"_generate_"+str(index)))
             fingerprint=attack_digest(candidate)
             if any(fingerprint in row["digests"] for row in c["cells"]):
                 raise InvalidCandidate("The offensive model repeated an already executed candidate.")
@@ -316,14 +321,17 @@ class Platform:
             return p
         self.store.mutate(campaign_id,workspace,record)
 
-    def reproduction_step(self,workspace,campaign_id):
-        c=self.store.get(campaign_id,workspace)
+    def reproduction_candidates(self, workspace, campaign):
         representatives={}
-        for aid in c["candidate_attempts"]:
+        for aid in campaign["candidate_attempts"]:
             a=self.store.get(aid,workspace,private_access=True)
             key=digest({k:a["assessment"][k] for k in ("property","boundary","effect")})
             representatives.setdefault(key,a)
-        candidates=list(representatives.items())
+        return list(representatives.items())
+
+    def reproduction_step(self,workspace,campaign_id):
+        c=self.store.get(campaign_id,workspace)
+        candidates=self.reproduction_candidates(workspace,c)
         index=c["progress"]["reproduction"]
         if index>=len(candidates):
             self.phase(workspace,campaign_id,"repairing")
@@ -371,6 +379,11 @@ class Platform:
         self.check_control(workspace,campaign_id)
         c=self.store.get(campaign_id,workspace)
         if c["state"] in TERMINAL:return
+        # Confirm new effects while discovery continues; deduplicate by the
+        # same property/boundary/effect key used by the reproduction phase.
+        if c["phase"] == "discovering" and c["progress"]["reproduction"] < len(self.reproduction_candidates(workspace,c)):
+            self.reproduction_step(workspace,campaign_id)
+            return
         handler={"preflight":self.preflight_step,"baselining":self.baseline_step,"discovering":self.discovery_step,
                  "reproducing":self.reproduction_step}.get(c["phase"])
         if handler:handler(workspace,campaign_id)

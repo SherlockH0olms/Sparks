@@ -127,7 +127,7 @@ class RepairService:
             try:
                 candidate = self.p.generator(workspace).generate(cell, self.p.snapshot_for(campaign, workspace),
                     campaign["spec"], observations, Budget(self.store, campaign["id"], workspace),
-                    "development", digest(experiment["id"] + "_dev_" + str(index) + "_" + str(retry))[:40])
+                    "development", self.p.generation_operation(campaign,experiment["id"] + "_dev_" + str(index) + "_" + str(retry)))
                 if attack_digest(candidate) in known:
                     raise InvalidCandidate("Development case duplicated an existing payload.")
                 row = {"cell": cell, "candidate": candidate, "error": None}

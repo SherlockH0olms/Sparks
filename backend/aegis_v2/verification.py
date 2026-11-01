@@ -86,7 +86,7 @@ class VerificationService:
                         observation["refusal"] = [s["trace"].get("refused", False) for s in attempt["steps"]]
                     observations.append(observation)
         budget = Budget(self.store, campaign["id"], workspace)
-        operation = digest(plan["id"] + ("_adaptive_" if adaptive else "_unseen_") + str(index))[:40]
+        operation = self.p.generation_operation(campaign,plan["id"] + ("_adaptive_" if adaptive else "_unseen_") + str(index))
         known = {d for c in campaign["cells"] for d in c["digests"]}
         known |= {attack_digest(candidate) for candidate in plan["replay"]}
         known |= {attack_digest(c["candidate"]) for c in plan["generated"] + plan["adaptive_cases"] if c.get("candidate")}
