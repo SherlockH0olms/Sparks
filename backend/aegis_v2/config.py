@@ -62,6 +62,8 @@ class Settings:
     session_hours: int = 8
     cookie_secure: bool = False
     instance_id: str = ""
+    managed_workspace: bool = False
+    workspace_release: str = ""
     allowed_origins: tuple[str, ...] = ("http://localhost:3000", "http://127.0.0.1:3000")
     local_endpoint: str = "http://127.0.0.1:11434/v1"
     local_model: str = ""
@@ -113,6 +115,8 @@ class Settings:
             lease_seconds=max(30, int(os.getenv("AEGIS_LEASE_SECONDS", "90"))),
             session_hours=max(1, int(os.getenv("AEGIS_SESSION_HOURS", "8"))),
             cookie_secure=os.getenv("AEGIS_COOKIE_SECURE", "false").lower() == "true", instance_id=os.getenv("AEGIS_INSTANCE_ID", ""),
+            managed_workspace=os.getenv("AEGIS_MANAGED_WORKSPACE", "false").lower() == "true",
+            workspace_release=os.getenv("AEGIS_WORKSPACE_RELEASE", ""),
             allowed_origins=tuple(x.strip() for x in os.getenv("AEGIS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if x.strip()),
             local_endpoint=os.getenv("AEGIS_LOCAL_ENDPOINT", "http://127.0.0.1:11434/v1").rstrip("/"),
             local_model=os.getenv("AEGIS_LOCAL_MODEL", ""), local_api_key=os.getenv("AEGIS_LOCAL_API_KEY", ""),

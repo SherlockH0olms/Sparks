@@ -129,9 +129,12 @@ def test_both_conflicts_update_proxy_origin_and_saved_urls(tmp_path, monkeypatch
     monkeypatch.setattr(launcher, "ready", lambda url, processes, **kw: checks.append((url, kw)))
     state_file = tmp_path / "state.json"
     try:
-        children, state = launcher.launch(args(api.port, web.port), "node", Path("next"), state_file)
+        request = args(api.port, web.port)
+        request.launch_id = "parent-launch-with-python-redirector"
+        children, state = launcher.launch(request, "node", Path("next"), state_file)
         assert state["api_port"] != api.port and state["web_port"] != web.port
         assert state["api_port"] != state["web_port"]
+        assert state["launch_id"] == request.launch_id
         assert json.loads(state_file.read_text())["status"] == "ready"
         assert state["api_url"] == f"http://127.0.0.1:{state['api_port']}"
         assert state["platform_url"] == f"http://127.0.0.1:{state['web_port']}/"

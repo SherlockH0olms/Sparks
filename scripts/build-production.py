@@ -76,8 +76,7 @@ def main():
     runtime.mkdir(exist_ok=True)
     (runtime / "current-production-build.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     (ROOT / "Open MAIN Build.cmd").write_text(
-        '@echo off\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\\Open-LiveWorkspace.ps1" -BuiltRelease "'
-        + release + '" %*\nif errorlevel 1 pause\n', encoding="utf-8")
+        '@echo off\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\\Open-LiveWorkspace.ps1" %*\nif errorlevel 1 pause\n', encoding="utf-8")
     (runtime / "MAIN-BUILD.txt").write_text(
         "AEGIS LOOP / ACTUAL PRODUCTION BUILD\n\nSource: " + str(ROOT)
         + "\nFrontend release: " + str(artifact)

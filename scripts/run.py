@@ -45,7 +45,7 @@ def ready(url, processes, *, instance_id=None):
     raise RuntimeError("Server did not become ready: " + url)
 
 
-def write_state(path: Path, state: dict):
+def atomic_state(path: Path, state: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as output:
         temporary = Path(output.name)
@@ -54,6 +54,20 @@ def write_state(path: Path, state: dict):
         os.replace(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def write_state(path: Path, state: dict):
+    if state.get("managed_workspace") and state.get("launch_id"):
+        atomic_state(path.parent / "live-instances" / (state["launch_id"] + ".json"), state)
+    # An older supervisor must never overwrite a newer launch's published state.
+    if state.get("status") in {"stopped", "failed"} and path.exists():
+        try:
+            current = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            current = {}
+        if current.get("launch_id") and current["launch_id"] != state.get("launch_id"):
+            return
+    atomic_state(path, state)
 
 
 def stop_children(processes):
@@ -69,11 +83,14 @@ def stop_children(processes):
 
 
 def launch(args, node, next_cli, state_file):
+    launch_id = getattr(args, "launch_id", None) or uuid.uuid4().hex
     dist_dir = args.dist_dir or {"production": ".next-live", "demo": ".next-demo", "dev": ".next-dev"}[args.mode]
     if Path(dist_dir).is_absolute() or ".." in Path(dist_dir).parts or dist_dir in {".", ""}:
         raise ValueError("Use a build directory inside frontend.")
     env = os.environ.copy()
     env["AEGIS_NEXT_DIST_DIR"] = dist_dir
+    if env.get("AEGIS_MANAGED_WORKSPACE", "false").lower() == "true":
+        env["AEGIS_WORKSPACE_RELEASE"] = dist_dir
     if args.mode != "dev" and not (ROOT / "frontend" / dist_dir / "BUILD_ID").exists():
         subprocess.run([node, str(next_cli), "build"], cwd=ROOT / "frontend", env=env, check=True)
     for attempt in range(5):
@@ -94,7 +111,8 @@ def launch(args, node, next_cli, state_file):
             env["AEGIS_DEMO_RUNTIME_DIR"] = str(ROOT / ".runtime" / f"demo-{api_port}-{web_port}")
         state = {
             "status": "starting", "source": str(ROOT), "mode": args.mode,
-            "release": dist_dir, "instance_id": instance_id,
+            "release": dist_dir, "instance_id": instance_id, "launch_id": launch_id,
+            "managed_workspace": env.get("AEGIS_MANAGED_WORKSPACE", "false").lower() == "true",
             "api_port": api_port, "web_port": web_port,
             "api_url": api_url, "platform_url": web_url + "/",
             "launcher_pid": os.getpid(),
@@ -152,6 +170,7 @@ def main():
     parser.add_argument("--strict-ports", action="store_true", help="Require the requested ports, for deployments/tests with fixed mappings.")
     parser.add_argument("--plan", action="store_true", help="Print an available port pair without starting servers or changing files.")
     parser.add_argument("--state-file", type=Path, help="JSON file containing the actual URLs, process IDs, and startup status.")
+    parser.add_argument("--launch-id", help="Parent-provided launch identity, independent of Windows Python redirector process IDs.")
     parser.add_argument("--dist-dir", help="Separate Next.js build directory; defaults to .next-live, .next-demo, or .next-dev.")
     args = parser.parse_args()
     if args.plan:

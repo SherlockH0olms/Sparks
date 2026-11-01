@@ -22,6 +22,7 @@ from .runtime import Platform, TERMINAL
 from .scenarios import coverage, target_template
 from .storage import Store, Conflict, NotFound, PrivateAccess
 from .naming import campaign_name, campaign_names, target_names
+from .workspace_lock import WorkspaceLock
 from .workers import Workers
 from .defenses import CONTROLS
 from .defense_tools import available, tool_catalog
@@ -54,10 +55,15 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
 
     @asynccontextmanager
     async def lifespan(app):
-        if start_workers:workers.start()
-        yield
-        workers.close()
-        if owns_store:platform.store.close()
+        workspace_lock = WorkspaceLock(settings.runtime_dir) if settings.managed_workspace and start_workers else None
+        try:
+            if workspace_lock:workspace_lock.acquire()
+            if start_workers:workers.start()
+            yield
+        finally:
+            workers.close()
+            if owns_store:platform.store.close()
+            if workspace_lock:workspace_lock.close()
 
     app=FastAPI(title="AEGIS LOOP",version="2.0.0",lifespan=lifespan)
     app.state.platform=platform;app.state.workers=workers;app.state.auth=auth
@@ -110,6 +116,7 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
     @app.get("/api/health")
     def health():
         return {"status":"ok","version":"2.0.0","instance_id":settings.instance_id,"auth_configured":len(settings.admin_token)>=32,
+                "managed_workspace":settings.managed_workspace,"workspace_release":settings.workspace_release,
                 "red":settings.red.public(),"judge":settings.judge.public(),
                 "red_attack_library":installed_library().summary(),
                 "local_defaults":{"endpoint":settings.local_endpoint,"model":settings.local_model},
