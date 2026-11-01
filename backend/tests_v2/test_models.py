@@ -7,7 +7,7 @@ from aegis_v2.config import Settings, ProviderSettings
 from aegis_v2.contracts import TargetCreate, Document, UtilityCase, ResourceLimits, DefenseConfig, Property
 from aegis_v2.storage import Store
 from aegis_v2.budget import Budget
-from aegis_v2.providers import ChatClient, BudgetedChat, ProviderError
+from aegis_v2.providers import ChatClient, BudgetedChat, ProviderError, TransientProviderError
 from aegis_v2.targets import Targets, LocalApplication, validate_local_endpoint
 from aegis_v2.evaluation import Evaluator, suite_metrics, utility_assessment
 from aegis_v2.atlas import CATALOG
@@ -61,6 +61,14 @@ def test_foundry_openai_v1_does_not_send_dated_api_version():
     assert ChatClient(cfg, transport=httpx.MockTransport(handler)).chat([{"role": "user", "content": "ready"}]).content == "READY"
     assert seen[0].url.path == "/openai/v1/chat/completions"
     assert "api-version" not in seen[0].url.params
+
+
+def test_missing_model_route_is_not_mistaken_for_an_offline_tunnel():
+    client = ChatClient(ProviderSettings(provider="openai_compatible", endpoint="https://demo.ngrok-free.app/v1", model="target"),
+                        transport=httpx.MockTransport(lambda r: httpx.Response(404, json={"error": "Unknown model"})), local=True)
+    with pytest.raises(ProviderError) as exc:
+        client.chat([{"role": "user", "content": "Ready?"}])
+    assert not isinstance(exc.value, TransientProviderError)
 
 def test_local_endpoint_cannot_redirect_to_an_unregistered_host():
     with pytest.raises(ValueError): validate_local_endpoint("https://attacker.test/v1",Settings())

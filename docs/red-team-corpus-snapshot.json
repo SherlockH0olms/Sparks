@@ -1,0 +1,176 @@
+{
+  "corpus_revision": "78bec9caedc7b5dc0e2ee5e5d74632460b46bdec5fec221ebe0ba7a70f60b6bc",
+  "sources": [
+    {
+      "id": "tensortrust",
+      "url": "https://github.com/HumanCompatibleAI/tensor-trust-data",
+      "version": "v2",
+      "license": "not-specified",
+      "mode": "dataset",
+      "files": [
+        {
+          "path": "raw-data/v2/raw_dump_attacks.jsonl.bz2",
+          "url": "https://raw.githubusercontent.com/HumanCompatibleAI/tensor-trust-data/main/raw-data/v2/raw_dump_attacks.jsonl.bz2",
+          "sha256": "87853cc8065a22156d15c4bdec777a8d35758749beb79769147d63a9644a73ce",
+          "bytes": 98978449
+        }
+      ],
+      "counts": {
+        "raw_records": 563349,
+        "excluded_single_code_guesses": 24149,
+        "usable_records": 384296,
+        "new_unique_resources": 235360,
+        "excluded_empty_or_correct_password": 7199,
+        "excluded_self_attacks": 147705
+      },
+      "available": true
+    },
+    {
+      "id": "wildteaming",
+      "url": "https://github.com/allenai/wildteaming",
+      "version": "snapshot",
+      "license": "not-specified",
+      "mode": "tactics_and_composition",
+      "files": [
+        {
+          "path": "data/tactics/auto_tactics.json",
+          "url": "https://raw.githubusercontent.com/allenai/wildteaming/main/data/tactics/auto_tactics.json",
+          "sha256": "36a04ccb42b4a50ddb62d611dab0cbf6f9ea339c9c15223c9f14ef4e64c0db06",
+          "bytes": 42962553
+        },
+        {
+          "path": "data/prompts/compose_tactics.txt",
+          "url": "https://raw.githubusercontent.com/allenai/wildteaming/main/data/prompts/compose_tactics.txt",
+          "sha256": "2833e8812082a95c00c1e4618e61def902522bb847ebb408c0f0a0b0356039ce",
+          "bytes": 5567
+        }
+      ],
+      "counts": {
+        "raw_records": 16834,
+        "usable_records": 16833,
+        "new_unique_resources": 16833
+      },
+      "available": true
+    },
+    {
+      "id": "bipia",
+      "url": "https://github.com/microsoft/BIPIA",
+      "version": "snapshot",
+      "license": "MIT (attack templates)",
+      "mode": "indirect_injection",
+      "files": [
+        {
+          "path": "benchmark/text_attack_train.json",
+          "url": "https://raw.githubusercontent.com/microsoft/BIPIA/main/benchmark/text_attack_train.json",
+          "sha256": "63f95d3e67eac4178cdabdbdaf192cd05f2b6ed0702b578f1d30d556e5155670",
+          "bytes": 5999
+        },
+        {
+          "path": "benchmark/text_attack_test.json",
+          "url": "https://raw.githubusercontent.com/microsoft/BIPIA/main/benchmark/text_attack_test.json",
+          "sha256": "75750e7b4e8b34e8f9d88d89b357aeaaf02bd07f9e493ccd37eda74a0cd7c7f8",
+          "bytes": 6322
+        },
+        {
+          "path": "benchmark/code_attack_train.json",
+          "url": "https://raw.githubusercontent.com/microsoft/BIPIA/main/benchmark/code_attack_train.json",
+          "sha256": "fe515080b6da2b5c0b67ca7ba2a3b3c2ce57c48f45733c475ebc813cba118484",
+          "bytes": 16343
+        },
+        {
+          "path": "benchmark/code_attack_test.json",
+          "url": "https://raw.githubusercontent.com/microsoft/BIPIA/main/benchmark/code_attack_test.json",
+          "sha256": "892545c5aaec0645b1ded65dc7816b3d70e9ef4eadcba2301a7a3db93676b6e0",
+          "bytes": 16356
+        }
+      ],
+      "counts": {
+        "raw_records": 250,
+        "usable_records": 250,
+        "new_unique_resources": 250
+      },
+      "available": true
+    },
+    {
+      "id": "injecagent",
+      "url": "https://github.com/uiuc-kang-lab/InjecAgent",
+      "version": "snapshot",
+      "license": "MIT",
+      "mode": "agent_injection",
+      "files": [
+        {
+          "path": "data/attacker_cases_ds.jsonl",
+          "url": "https://raw.githubusercontent.com/uiuc-kang-lab/InjecAgent/main/data/attacker_cases_ds.jsonl",
+          "sha256": "87952398c989d8ca841724e38ecdbb789676d3841e19dfc44aac7b710df9cb1f",
+          "bytes": 13209
+        },
+        {
+          "path": "data/attacker_cases_dh.jsonl",
+          "url": "https://raw.githubusercontent.com/uiuc-kang-lab/InjecAgent/main/data/attacker_cases_dh.jsonl",
+          "sha256": "999d52e15af3c80a3303a09430af0f3878d1f91e4c573ca7b477a91cdfa6b991",
+          "bytes": 10937
+        }
+      ],
+      "counts": {
+        "raw_records": 62,
+        "usable_records": 62,
+        "new_unique_resources": 62
+      },
+      "available": true
+    },
+    {
+      "id": "harmbench",
+      "url": "https://github.com/centerforaisafety/HarmBench",
+      "version": "snapshot",
+      "license": "MIT",
+      "mode": "mutation_templates",
+      "files": [
+        {
+          "path": "baselines/gptfuzz/GPTFuzzer.csv",
+          "url": "https://raw.githubusercontent.com/centerforaisafety/HarmBench/main/baselines/gptfuzz/GPTFuzzer.csv",
+          "sha256": "e4abf25343b4adb991dd8ddc6189c038f26a6e74064d792cced69f56f71577fc",
+          "bytes": 158982
+        },
+        {
+          "path": "baselines/human_jailbreaks/jailbreaks.py",
+          "url": "https://raw.githubusercontent.com/centerforaisafety/HarmBench/main/baselines/human_jailbreaks/jailbreaks.py",
+          "sha256": "62e53558de1da3e67d1aec15c0dff59c848c0b374fd262ffad8f723fda0cd099",
+          "bytes": 231148
+        }
+      ],
+      "counts": {
+        "raw_records": 189,
+        "usable_records": 189,
+        "new_unique_resources": 137
+      },
+      "available": true
+    },
+    {
+      "id": "agentdojo",
+      "url": "https://github.com/ethz-spylab/agentdojo",
+      "version": "snapshot",
+      "license": "MIT",
+      "mode": "agent_injection",
+      "files": [
+        {
+          "path": "src/agentdojo/attacks/important_instructions_attacks.py",
+          "url": "https://raw.githubusercontent.com/ethz-spylab/agentdojo/main/src/agentdojo/attacks/important_instructions_attacks.py",
+          "sha256": "519f24e0b9d72f43343d665679adacc33758b50cd1b586a81fa53fb098dcfe71",
+          "bytes": 6222
+        },
+        {
+          "path": "src/agentdojo/attacks/baseline_attacks.py",
+          "url": "https://raw.githubusercontent.com/ethz-spylab/agentdojo/main/src/agentdojo/attacks/baseline_attacks.py",
+          "sha256": "0e3f3cec2173524989d67bd3d934d032774ad3fc5995969c9565613efaa21c6d",
+          "bytes": 2864
+        }
+      ],
+      "counts": {
+        "raw_records": 4,
+        "usable_records": 4,
+        "new_unique_resources": 4
+      },
+      "available": true
+    }
+  ]
+}

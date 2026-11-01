@@ -41,6 +41,35 @@ def test_api_authentication_role_and_workspace_boundaries(platform):
         assert client.get("/api/auth/me").status_code==401
 
 
+def test_red_library_api_requires_login_and_exposes_only_component_metadata(platform):
+    p,_,_,_=platform
+    with TestClient(create_app(p.settings,platform=p,start_workers=False)) as client:
+        assert client.get("/api/red/library").status_code==401
+        result=client.get("/api/red/library",headers=headers()).json()
+        assert "methods" in result and "summary" in result
+        assert "api_key" not in json.dumps(result).lower()
+        assert client.get("/api/health").json()["red_attack_library"]["revision"]==result["summary"]["revision"]
+
+
+def test_red_corpus_api_auth_search_full_read_and_invalid_ids(platform,monkeypatch):
+    from aegis_v2.red_library import AttackLibrary
+    library=AttackLibrary({"resources":[{"id":"fixture:seed","framework":"fixture","version":"test","license":"MIT",
+        "path":"public.json","title":"Metadata attack","text":"metadata fixture " + "x"*7000,"description":"","sha256":"fixture"}],
+        "transforms":[],"frameworks":[],"revision":"api-fixture"})
+    monkeypatch.setattr("aegis_v2.api.installed_library",lambda:library)
+    p,_,_,_=platform
+    with TestClient(create_app(p.settings,platform=p,start_workers=False)) as client:
+        for path in ["/api/red/library/sources","/api/red/library/resources","/api/red/library/resource/fixture:seed"]:
+            assert client.get(path).status_code==401
+        assert client.get("/api/red/library/sources",headers=headers()).json()["summary"]["revision"]=="api-fixture"
+        result=client.get("/api/red/library/resources",params={"query":"metadata","limit":1},headers=headers()).json()
+        assert result["total"]==1 and "text" not in result["results"][0]
+        result=client.get("/api/red/library/resource/fixture:seed",headers=headers()).json()
+        assert len(result["text"])>7000
+        assert client.get("/api/red/library/resource/nonexistent",headers=headers()).status_code==404
+        assert client.get("/api/red/library/resources?limit=100",headers=headers()).status_code==422
+
+
 def test_idempotent_control_and_real_worker_completion(platform):
     p,admin,target,_=platform
     app=create_app(p.settings,platform=p,start_workers=True)

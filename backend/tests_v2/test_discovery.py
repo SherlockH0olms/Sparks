@@ -57,7 +57,9 @@ def advance_to(platform,workspace,cid,phase):
 
 def campaign(p,admin,target):
     c=p.create_campaign(admin,CampaignCreate(target_id=target["id"],languages=["en"],
-        properties=[Property.TOOL],families=[Family.TOOL],max_discovery_attempts=2,minimum_tests_per_cell=2,max_repair_groups=1))
+        properties=[Property.TOOL],families=[Family.TOOL],max_discovery_attempts=2,minimum_tests_per_cell=2,max_repair_groups=1,
+        remediation_profile="smoke",reproduction_trials=3,development_fresh_cases=0,final_cases_per_property=3,
+        adaptive_attempts=2,verification_scope="finding",utility_repeats=1))
     p.control(admin,c["id"],"start")
     return c["id"]
 
