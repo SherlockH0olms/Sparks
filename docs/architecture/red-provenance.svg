@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1300" viewBox="0 0 1440 1300" role="img" aria-labelledby="title description">
+<title id="title">From source material to a target-specific candidate.</title><desc id="description">Authorized target manifest feeds the Red provider. The agent calls registered tools to select methods, search indexed resources, compose tactics and execute isolated transforms. Validated submission contains exact transformed text; the server records provenance and permits bounded target feedback.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718398"/></marker>
+  <filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#12243b" flood-opacity=".045"/></filter>
+</defs>
+<style>text {font-family: Inter, 'Segoe UI', Arial, sans-serif;} .heading {font-weight:700;} .tag {font-weight:700;letter-spacing:1.2px;}</style>
+<rect width="1440" height="1300" fill="#f7f9fc"/>
+<rect x="48" y="42" width="5" height="63" rx="2" fill="#087f82"/>
+
+<text x="72" y="63" font-size="12" fill="#087f82" class="tag" text-anchor="start">AEGIS LOOP  /  ARCHITECTURE</text>
+<text x="72" y="104" font-size="32" fill="#12243b" class="heading" text-anchor="start">From source material to a target-specific candidate.</text>
+<text x="72" y="136" font-size="17" fill="#50657a" class="" text-anchor="start">Real tool results and server-owned provenance connect attack generation to auditable evidence.</text>
+<text x="1326" y="89" font-size="32" fill="#b4c4d6" class="heading" text-anchor="start">02</text>
+<rect x="48" y="181" width="1344" height="122" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="48" y="199" width="4" height="86" rx="2" fill="#087f82"/>
+<text x="68" y="207" font-size="11" fill="#087f82" class="tag" text-anchor="start">TRUSTED CONTEXT</text>
+<text x="68" y="236" font-size="20" fill="#12243b" class="heading" text-anchor="start">Authorized target manifest + selected scope cell</text>
+<text x="68" y="264" font-size="15" fill="#50657a" class="" text-anchor="start">Task policy, real tool schemas, accessible documents, language, property and writable surface.</text>
+<text x="68" y="287" font-size="15" fill="#50657a" class="" text-anchor="start">Foreign-tenant document bodies and private oracle/canary values are excluded.</text>
+<rect x="48" y="378" width="470" height="634" rx="20" fill="#eef3fb" stroke="#d7e1ed"/>
+<text x="72" y="413" font-size="13" fill="#245fe8" class="tag" text-anchor="start">RED MODEL &amp; TOOL CONVERSATION</text>
+<rect x="574" y="378" width="818" height="634" rx="20" fill="#eef7f6" stroke="#d7e1ed"/>
+<text x="598" y="413" font-size="13" fill="#087f82" class="tag" text-anchor="start">REGISTERED LIBRARY &amp; ISOLATED UPSTREAM COMPONENTS</text>
+<rect x="72" y="451" width="422" height="152" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="72" y="469" width="4" height="116" rx="2" fill="#245fe8"/>
+<text x="92" y="477" font-size="11" fill="#245fe8" class="tag" text-anchor="start">MODEL ROLE</text>
+<text x="92" y="506" font-size="20" fill="#12243b" class="heading" text-anchor="start">Red provider</text>
+<text x="92" y="534" font-size="15" fill="#50657a" class="" text-anchor="start">Generates and adapts candidates.</text>
+<text x="92" y="557" font-size="15" fill="#50657a" class="" text-anchor="start">Native function calls or explicit JSON mode.</text>
+<text x="92" y="580" font-size="15" fill="#50657a" class="" text-anchor="start">No arbitrary shell, browser or network tool.</text>
+<rect x="72" y="684" width="422" height="156" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="72" y="702" width="4" height="120" rx="2" fill="#245fe8"/>
+<text x="92" y="710" font-size="11" fill="#245fe8" class="tag" text-anchor="start">SERVER ENFORCEMENT</text>
+<text x="92" y="739" font-size="20" fill="#12243b" class="heading" text-anchor="start">AEGIS tool dispatcher</text>
+<text x="92" y="767" font-size="15" fill="#50657a" class="" text-anchor="start">Validates registered tool names/arguments.</text>
+<text x="92" y="790" font-size="15" fill="#50657a" class="" text-anchor="start">Returns actual role=tool results.</text>
+<text x="92" y="813" font-size="15" fill="#50657a" class="" text-anchor="start">Candidate correction and recorded replay.</text>
+<path d="M 430 303 L 430 451" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 283 603 L 283 684" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="310" y="650" font-size="13" fill="#50657a" class="" text-anchor="start">Function call / result</text>
+<rect x="598" y="451" width="770" height="121" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="598" y="469" width="4" height="85" rx="2" fill="#087f82"/>
+<text x="618" y="477" font-size="11" fill="#087f82" class="tag" text-anchor="start">SELECT</text>
+<text x="618" y="506" font-size="20" fill="#12243b" class="heading" text-anchor="start">Methods and rotating bundles</text>
+<text x="618" y="534" font-size="15" fill="#50657a" class="" text-anchor="start">Less-used compatible methods, source selection and resource offsets.</text>
+<text x="618" y="557" font-size="15" fill="#50657a" class="" text-anchor="start">list/get methods, list sources, get_attack_bundle.</text>
+<rect x="598" y="615" width="770" height="158" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="598" y="633" width="4" height="122" rx="2" fill="#087f82"/>
+<text x="618" y="641" font-size="11" fill="#087f82" class="tag" text-anchor="start">SEARCH / READ / COMPOSE</text>
+<text x="618" y="670" font-size="20" fill="#12243b" class="heading" text-anchor="start">Indexed source records + tactic composition</text>
+<text x="618" y="698" font-size="15" fill="#50657a" class="" text-anchor="start">SQLite FTS5 search, full-record reads, source/path/version/hash metadata.</text>
+<text x="618" y="721" font-size="15" fill="#50657a" class="" text-anchor="start">TensorTrust, WildTeaming, PyRIT, Garak, BIPIA and other declared imports.</text>
+<text x="618" y="744" font-size="15" fill="#50657a" class="" text-anchor="start">compose_attack_tactics supplies real selected tactics and guidance.</text>
+<rect x="598" y="816" width="770" height="155" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="598" y="834" width="4" height="119" rx="2" fill="#087f82"/>
+<text x="618" y="842" font-size="11" fill="#087f82" class="tag" text-anchor="start">TRANSFORM</text>
+<text x="618" y="871" font-size="20" fill="#12243b" class="heading" text-anchor="start">Actual local transformation outputs</text>
+<text x="618" y="899" font-size="15" fill="#50657a" class="" text-anchor="start">PyRIT 32 / Garak 2 / Promptfoo 11 / DeepTeam 4 registered transforms.</text>
+<text x="618" y="922" font-size="15" fill="#50657a" class="" text-anchor="start">Isolated workers execute upstream APIs, not model-written code.</text>
+<text x="618" y="945" font-size="15" fill="#50657a" class="" text-anchor="start">insertion_token preserves exact text and supports chaining.</text>
+<path d="M 983 572 L 983 615" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M 983 773 L 983 816" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path d="M 494 760 L 546 760 L 546 694 L 598 694" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<rect x="72" y="889" width="422" height="89" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="72" y="907" width="4" height="53" rx="2" fill="#245fe8"/>
+<text x="92" y="915" font-size="20" fill="#12243b" class="heading" text-anchor="start">Permitted observations</text>
+<text x="92" y="943" font-size="15" fill="#50657a" class="" text-anchor="start">Target response, refusal and allowed feedback.</text>
+<path d="M 283 889 L 283 840" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="6 5"/>
+<rect x="48" y="1073" width="1344" height="165" rx="20" fill="#f0f5f7" stroke="#d7e1ed"/>
+<text x="72" y="1108" font-size="13" fill="#087f82" class="tag" text-anchor="start">CANDIDATE DELIVERY &amp; INTEGRITY</text>
+<rect x="72" y="1125" width="610" height="89" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="72" y="1143" width="4" height="53" rx="2" fill="#245fe8"/>
+<text x="92" y="1151" font-size="20" fill="#12243b" class="heading" text-anchor="start">Validated submit_attack</text>
+<text x="92" y="1179" font-size="15" fill="#50657a" class="" text-anchor="start">Materialized payload checked against scope, depth and configured caps.</text>
+<rect x="740" y="1125" width="628" height="89" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="740" y="1143" width="4" height="53" rx="2" fill="#087f82"/>
+<text x="760" y="1151" font-size="20" fill="#12243b" class="heading" text-anchor="start">Server-owned red_strategy</text>
+<text x="760" y="1179" font-size="15" fill="#50657a" class="" text-anchor="start">Actual resources, methods, tactics, composition hashes and transform use.</text>
+<path d="M 494 804 L 538 804 L 538 1041 L 377 1041 L 377 1125" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 682 1170 L 740 1170" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="48" y="1277" font-size="13" fill="#50657a" class="" text-anchor="start">Source read, transformation applied, candidate accepted and target violation are separate observations.</text>
+<text x="1392" y="1277" font-size="13" fill="#087f82" class="heading" text-anchor="end">AEGIS v2</text>
+</svg>

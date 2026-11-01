@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1260" viewBox="0 0 1440 1260" role="img" aria-labelledby="title description">
+<title id="title">Discover. Reproduce. Repair. Verify.</title><desc id="description">Versioned scope and utility baseline lead to autonomous discovery and fresh-session reproduction. Supported defense candidates are compared during development. An immutable selected configuration is tested on paired replay, unseen, adaptive and utility suites. Final verdict and matching hashes control deployment eligibility.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718398"/></marker>
+  <filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#12243b" flood-opacity=".045"/></filter>
+</defs>
+<style>text {font-family: Inter, 'Segoe UI', Arial, sans-serif;} .heading {font-weight:700;} .tag {font-weight:700;letter-spacing:1.2px;}</style>
+<rect width="1440" height="1260" fill="#f7f9fc"/>
+<rect x="48" y="42" width="5" height="63" rx="2" fill="#087f82"/>
+
+<text x="72" y="63" font-size="12" fill="#087f82" class="tag" text-anchor="start">AEGIS LOOP  /  ARCHITECTURE</text>
+<text x="72" y="104" font-size="32" fill="#12243b" class="heading" text-anchor="start">Discover. Reproduce. Repair. Verify.</text>
+<text x="72" y="136" font-size="17" fill="#50657a" class="" text-anchor="start">A configuration selected in development is frozen before the independent final experiment.</text>
+<text x="1326" y="89" font-size="32" fill="#b4c4d6" class="heading" text-anchor="start">03</text>
+<rect x="48" y="188" width="302" height="147" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="48" y="206" width="4" height="111" rx="2" fill="#245fe8"/>
+<text x="68" y="214" font-size="11" fill="#245fe8" class="tag" text-anchor="start">01  PREFLIGHT</text>
+<text x="68" y="243" font-size="20" fill="#12243b" class="heading" text-anchor="start">Register scope</text>
+<text x="68" y="271" font-size="15" fill="#50657a" class="" text-anchor="start">Pinned target/application revision.</text>
+<text x="68" y="294" font-size="15" fill="#50657a" class="" text-anchor="start">Capabilities and attacker access.</text>
+<rect x="394" y="188" width="302" height="147" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="394" y="206" width="4" height="111" rx="2" fill="#245fe8"/>
+<text x="414" y="214" font-size="11" fill="#245fe8" class="tag" text-anchor="start">02  BASELINE</text>
+<text x="414" y="243" font-size="20" fill="#12243b" class="heading" text-anchor="start">Establish utility</text>
+<text x="414" y="271" font-size="15" fill="#50657a" class="" text-anchor="start">Registered legitimate tasks.</text>
+<text x="414" y="294" font-size="15" fill="#50657a" class="" text-anchor="start">Recorded normal behavior.</text>
+<rect x="740" y="188" width="302" height="147" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="740" y="206" width="4" height="111" rx="2" fill="#245fe8"/>
+<text x="760" y="214" font-size="11" fill="#245fe8" class="tag" text-anchor="start">03  DISCOVERY</text>
+<text x="760" y="243" font-size="20" fill="#12243b" class="heading" text-anchor="start">Generate attacks</text>
+<text x="760" y="271" font-size="15" fill="#50657a" class="" text-anchor="start">Autonomous cell selection.</text>
+<text x="760" y="294" font-size="15" fill="#50657a" class="" text-anchor="start">Actual target execution.</text>
+<rect x="1086" y="188" width="306" height="147" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="1086" y="206" width="4" height="111" rx="2" fill="#245fe8"/>
+<text x="1106" y="214" font-size="11" fill="#245fe8" class="tag" text-anchor="start">04  REPRODUCTION</text>
+<text x="1106" y="243" font-size="20" fill="#12243b" class="heading" text-anchor="start">Reproduce effect</text>
+<text x="1106" y="271" font-size="15" fill="#50657a" class="" text-anchor="start">Fresh sessions and minimization.</text>
+<text x="1106" y="294" font-size="15" fill="#50657a" class="" text-anchor="start">Evidence-backed finding.</text>
+<path d="M 350 261 L 394 261" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 696 261 L 740 261" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1042 261 L 1086 261" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="48" y="426" width="600" height="476" rx="20" fill="#eef3fb" stroke="#d7e1ed"/>
+<text x="72" y="461" font-size="13" fill="#245fe8" class="tag" text-anchor="start">05  DEVELOPMENT / SUPPORTED CONFIGURATIONS</text>
+<rect x="72" y="498" width="552" height="152" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="72" y="516" width="4" height="116" rx="2" fill="#245fe8"/>
+<text x="92" y="524" font-size="11" fill="#245fe8" class="tag" text-anchor="start">EXECUTABLE REMEDIATION</text>
+<text x="92" y="553" font-size="20" fill="#12243b" class="heading" text-anchor="start">Compare control candidates</text>
+<text x="92" y="581" font-size="15" fill="#50657a" class="" text-anchor="start">A baseline / B policy / C focused / D combined.</text>
+<text x="92" y="604" font-size="15" fill="#50657a" class="" text-anchor="start">Applicable E encoding/provenance, F Guardrails, G Presidio.</text>
+<text x="92" y="627" font-size="15" fill="#50657a" class="" text-anchor="start">Configuration diffs, prerequisites and artifact hashes.</text>
+<rect x="72" y="701" width="552" height="162" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="72" y="719" width="4" height="126" rx="2" fill="#245fe8"/>
+<text x="92" y="727" font-size="11" fill="#245fe8" class="tag" text-anchor="start">DEVELOPMENT EVIDENCE</text>
+<text x="92" y="756" font-size="20" fill="#12243b" class="heading" text-anchor="start">Security + legitimate-use gates</text>
+<text x="92" y="784" font-size="15" fill="#50657a" class="" text-anchor="start">Related replays and shared fresh development inputs.</text>
+<text x="92" y="807" font-size="15" fill="#50657a" class="" text-anchor="start">Utility floor, false blocks and allowed utility drop.</text>
+<text x="92" y="830" font-size="15" fill="#50657a" class="" text-anchor="start">Qualification and automatic candidate selection.</text>
+<path d="M 348 650 L 348 701" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1239 335 L 1239 381 L 348 381 L 348 426" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="720" y="426" width="672" height="153" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="720" y="444" width="4" height="117" rx="2" fill="#087f82"/>
+<text x="740" y="452" font-size="11" fill="#087f82" class="tag" text-anchor="start">06  FREEZE</text>
+<text x="740" y="481" font-size="20" fill="#12243b" class="heading" text-anchor="start">Freeze selected configuration</text>
+<text x="740" y="509" font-size="15" fill="#50657a" class="" text-anchor="start">Immutable artifact/hash and target revision fixed before final generation.</text>
+<text x="740" y="532" font-size="15" fill="#50657a" class="" text-anchor="start">Final cases remain separated from discovery/development inputs.</text>
+<text x="740" y="555" font-size="15" fill="#50657a" class="" text-anchor="start">A development winner alone is not deployment approval.</text>
+<path d="M 624 782 L 684 782 L 684 502 L 720 502" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="720" y="650" width="672" height="374" rx="20" fill="#eef7f6" stroke="#d7e1ed"/>
+<text x="744" y="685" font-size="13" fill="#087f82" class="tag" text-anchor="start">07  FINAL BASELINE / CANDIDATE PAIRS</text>
+<path d="M 1056 579 L 1056 650" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="744" y="720" width="300" height="122" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="744" y="738" width="4" height="86" rx="2" fill="#087f82"/>
+<text x="764" y="746" font-size="20" fill="#12243b" class="heading" text-anchor="start">Known replay</text>
+<text x="764" y="774" font-size="15" fill="#50657a" class="" text-anchor="start">Reproduced attack inputs.</text>
+<text x="764" y="797" font-size="15" fill="#50657a" class="" text-anchor="start">Same inputs on both configs.</text>
+<rect x="1068" y="720" width="300" height="122" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="1068" y="738" width="4" height="86" rx="2" fill="#087f82"/>
+<text x="1088" y="746" font-size="20" fill="#12243b" class="heading" text-anchor="start">Unseen attacks</text>
+<text x="1088" y="774" font-size="15" fill="#50657a" class="" text-anchor="start">New, distinct final inputs.</text>
+<text x="1088" y="797" font-size="15" fill="#50657a" class="" text-anchor="start">Recorded generation provenance.</text>
+<rect x="744" y="872" width="300" height="122" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="744" y="890" width="4" height="86" rx="2" fill="#087f82"/>
+<text x="764" y="898" font-size="20" fill="#12243b" class="heading" text-anchor="start">Adaptive attacks</text>
+<text x="764" y="926" font-size="15" fill="#50657a" class="" text-anchor="start">Permitted candidate feedback.</text>
+<text x="764" y="949" font-size="15" fill="#50657a" class="" text-anchor="start">Paired baseline execution.</text>
+<rect x="1068" y="872" width="300" height="122" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="1068" y="890" width="4" height="86" rx="2" fill="#087f82"/>
+<text x="1088" y="898" font-size="20" fill="#12243b" class="heading" text-anchor="start">Legitimate utility</text>
+<text x="1088" y="926" font-size="15" fill="#50657a" class="" text-anchor="start">Registered normal tasks.</text>
+<text x="1088" y="949" font-size="15" fill="#50657a" class="" text-anchor="start">Completeness and utility gates.</text>
+<rect x="48" y="942" width="600" height="82" rx="14" fill="#fff" stroke="#dbe3ed" filter="url(#shadow)"/>
+<rect x="48" y="960" width="4" height="46" rx="2" fill="#087f82"/>
+<text x="68" y="968" font-size="20" fill="#12243b" class="heading" text-anchor="start">Paired protocol v4</text>
+<text x="68" y="996" font-size="15" fill="#50657a" class="" text-anchor="start">Complete evaluable baseline and candidate evidence is required.</text>
+<rect x="48" y="1096" width="1344" height="116" rx="20" fill="#f0f5f7" stroke="#d7e1ed"/>
+<text x="72" y="1131" font-size="13" fill="#087f82" class="tag" text-anchor="start">08  FINAL DECISION &amp; ARTIFACT ELIGIBILITY</text>
+<path d="M 1056 1024 L 1056 1096" fill="none" stroke="#718398" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="72" y="1161" font-size="20" fill="#087f82" class="heading" text-anchor="start">Validated in scope</text>
+<text x="72" y="1187" font-size="15" fill="#50657a" class="" text-anchor="start">Matching selected hash/revision required for eligibility.</text>
+<text x="618" y="1161" font-size="20" fill="#ab6718" class="heading" text-anchor="start">Rejected</text>
+<text x="618" y="1187" font-size="15" fill="#50657a" class="" text-anchor="start">A measured requirement failed.</text>
+<text x="1000" y="1161" font-size="20" fill="#50657a" class="heading" text-anchor="start">Inconclusive</text>
+<text x="1000" y="1187" font-size="15" fill="#50657a" class="" text-anchor="start">Insufficient evaluable evidence.</text>
+<text x="48" y="1237" font-size="13" fill="#50657a" class="" text-anchor="start">Reports preserve scope, comparisons, evidence, verdict, rollback plans and integrity hashes.</text>
+<text x="1392" y="1237" font-size="13" fill="#087f82" class="heading" text-anchor="end">AEGIS v2</text>
+</svg>
