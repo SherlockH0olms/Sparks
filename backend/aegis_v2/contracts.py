@@ -7,7 +7,7 @@ import uuid
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def new_id(prefix: str) -> str:
@@ -151,7 +151,7 @@ class TargetCreate(Contract):
     name: str = Field(min_length=1, max_length=120)
     endpoint: str = Field(min_length=8, max_length=500)
     model: Nonempty
-    model_revision: Nonempty
+    model_revision: str = Field(default="", max_length=200)
     connection_kind: Literal["local", "lan", "tailscale", "cloudflare", "ngrok", "notebook", "custom"] = "local"
     api_format: Literal["openai_compatible", "ollama"] = "openai_compatible"
     tool_mode: Literal["native", "json"] = "native"
@@ -170,12 +170,17 @@ class TargetCreate(Contract):
     red_observations: list[Literal["public_response", "refusal", "tool_requests"]] = Field(default_factory=lambda: ["public_response", "refusal"])
     writable_surfaces: list[Literal["user_message", "assigned_document"]] = Field(default_factory=lambda: ["user_message", "assigned_document"])
 
+    @field_validator("model_revision", mode="before")
+    @classmethod
+    def optional_model_revision(cls, value):
+        return "" if value is None else value.strip() if isinstance(value, str) else value
+
     @model_validator(mode="after")
     def validate_inventory(self):
         if bool(self.access_client_id) != bool(self.access_client_secret):
             raise ValueError("Cloudflare Access requires both a client ID and client secret.")
-        if not self.model_revision.strip() or self.model_revision.startswith("replace-with-"):
-            raise ValueError("Supply the actual pinned model revision, not a setup placeholder.")
+        if self.model_revision.startswith("replace-with-"):
+            raise ValueError("Leave the model version blank or supply a real revision instead of a setup placeholder.")
         ids = [d.id for d in self.documents]
         if len(ids) != len(set(ids)):
             raise ValueError("Document identifiers must be unique.")

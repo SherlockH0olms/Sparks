@@ -16,6 +16,7 @@ from .providers import ChatClient, BudgetedChat, ProviderError, TargetUnavailabl
 from .red import RedGenerator, InvalidCandidate
 from .scenarios import build_cells, coverage, choose_cell, IMPORTANCE
 from .storage import Store, NotFound, Conflict
+from .naming import campaign_name, campaign_names, target_names
 from .targets import Targets, LocalApplication
 
 
@@ -77,7 +78,8 @@ class Platform:
             "coverage": coverage(c["cells"]), "attempts": len(c["discovery_attempts"]), "findings": len(c["findings"]),
             "groups": len(c["groups"]), "experiments": len(c["experiments"]), "verification_runs": len(c["verification_runs"]),
             "red_diversity": self.red_diversity(workspace, c),
-            "budget": Budget(self.store, campaign_id, workspace).snapshot()}
+            "budget": Budget(self.store, campaign_id, workspace).snapshot()} | campaign_name(
+                c, campaign_names(self.store, workspace), target_names(self.store, workspace))
 
     def red_diversity(self, workspace, campaign):
         strategies = [self.store.get(aid, workspace, private_access=True)["candidate"].get("red_strategy", {})

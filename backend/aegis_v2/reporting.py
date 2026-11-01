@@ -139,7 +139,7 @@ class Reporting:
                 "final_valid_tests": sum(v["suites"]["candidate"][suite].get("valid", 0) for v in verification for suite in ("replay", "unseen", "adaptive")),
                 "interpretation": ("Validated candidates passed the recorded security and normal-use requirements. Validation applies only within this scope."
                                    if validated else "No candidate met all final validation requirements. Review rejected and incomplete suites before deployment. A completed workflow alone does not establish a successful remedy.")},
-            "scope_rows": [["Target", target["name"]], ["Model / pinned version", target["model"] + " / " + target["model_revision"]],
+            "scope_rows": [["Target", target["name"]], ["Model / version", target["model"] + " / " + (target["model_revision"] or "Not specified")],
                 ["Application version", target["application_revision"]], ["Target snapshot", c["target_revision"]],
                 ["Connection", target.get("connection_kind", "local") + " / " + target["endpoint"]],
                 ["Tool protocol", target.get("tool_mode", "native")],

@@ -127,6 +127,26 @@ class Store:
         with self.engine.connect() as conn:
             return list(conn.execute(select(records.c.workspace).distinct()).scalars())
 
+    def registration_history(self, kind: str, workspace: str) -> list[dict]:
+        """Public naming metadata across all pages, in immutable creation order."""
+        if kind not in {"target", "campaign"}:
+            raise ValueError("Registration history is only available for targets and campaigns.")
+        columns = [records.c.id, records.c.created]
+        if kind == "target":
+            columns.append(records.c.payload)
+        with self.engine.connect() as conn:
+            rows = conn.execute(select(*columns).where(records.c.kind == kind,
+                records.c.workspace == workspace, records.c.private.is_(False))
+                .order_by(records.c.created, records.c.id)).mappings().all()
+        history = []
+        for row in rows:
+            item = {"id": row["id"], "created_at": row["created"]}
+            if kind == "target":
+                payload = json.loads(row["payload"])
+                item.update(name=payload["name"], model=payload["model"])
+            history.append(item)
+        return history
+
     def iter_records(self, kind: str, workspace: str, *, parent=None, private_access=False):
         """Stable keyset traversal; exports and analysis have no 1,000-record cap."""
         last = ""

@@ -13,6 +13,7 @@ from .config import ProviderSettings, Settings
 from .contracts import TargetCreate, DefenseConfig, Document, digest, new_id
 from .providers import ChatClient, BudgetedChat, ProviderError
 from .storage import Store, NotFound
+from .naming import target_names
 from .defenses import (OUTPUT_SCHEMA, OUTPUT_VALIDATOR, INJECTION_RE, strict_json, normalize_instruction, injection_forms, mask_secrets)
 from .defense_tools import run_tool, available
 from .defenses import CONTROLS
@@ -84,7 +85,10 @@ class Targets:
                      "assigned_to_red": d["assigned_to_red"], "confidential": d["confidential"]} for d in snapshot["documents"]],
                  "utility_count": len(spec.utility_cases), "created_by": actor_id, "preflight": None}, id=target_id)
         self.store.event(workspace, "system", "target_registered", {"target_id": target_id, "revision": revision, "actor": actor_id})
-        return self.store.get(target_id, workspace)
+        return self.public(workspace, target_id)
+
+    def public(self, workspace: str, target_id: str):
+        return self.store.get(target_id, workspace) | target_names(self.store, workspace)[target_id]
 
     def snapshot(self, workspace: str, target_id: str):
         target = self.store.get(target_id, workspace)

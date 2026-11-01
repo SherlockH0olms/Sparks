@@ -21,6 +21,7 @@ from .reporting import Reporting
 from .runtime import Platform, TERMINAL
 from .scenarios import coverage, target_template
 from .storage import Store, Conflict, NotFound, PrivateAccess
+from .naming import campaign_name, campaign_names, target_names
 from .workers import Workers
 from .defenses import CONTROLS
 from .defense_tools import available, tool_catalog
@@ -187,17 +188,19 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
 
     @app.get("/api/targets")
     def list_targets(limit: int=Query(100,ge=1,le=200),offset: int=Query(0,ge=0),who: Actor=Depends(actor)):
-        return platform.store.list("target",who.workspace,limit=limit,offset=offset)
+        names=target_names(platform.store,who.workspace)
+        return [row | names[row["id"]] for row in platform.store.list("target",who.workspace,limit=limit,offset=offset)]
 
     @app.post("/api/targets",status_code=201)
     def create_target(body: TargetCreate,who: Actor=Depends(actor),key: str=Header("",alias="Idempotency-Key")):
         require_permission(who,"target");throttle(who)
-        return platform.store.once(who.workspace,"target",key,body.model_dump(mode="json"),
+        result=platform.store.once(who.workspace,"target",key,body.model_dump(mode="json"),
                                    lambda:platform.targets.create(who.workspace,body,who.id))
+        return result | target_names(platform.store,who.workspace)[result["id"]]
 
     @app.get("/api/targets/{target_id}")
     def get_target(target_id: str,who: Actor=Depends(actor)):
-        return platform.store.get(target_id,who.workspace)
+        return platform.targets.public(who.workspace,target_id)
 
     @app.post("/api/targets/{target_id}/preflight")
     def preflight(target_id: str,who: Actor=Depends(actor)):
@@ -209,9 +212,10 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
     @app.get("/api/campaigns")
     def campaigns(limit: int=Query(50,ge=1,le=200),offset: int=Query(0,ge=0),who: Actor=Depends(actor)):
         rows=platform.store.list("campaign",who.workspace,limit=limit,offset=offset)
+        names=campaign_names(platform.store,who.workspace);targets=target_names(platform.store,who.workspace)
         return [{"id":c["id"],"state":c["state"],"phase":c["phase"],"target_id":c["target_id"],
                  "target_revision":c["target_revision"],"created_at":c["_created"],"attempts":len(c["discovery_attempts"]),
-                 "findings":len(c["findings"]),"coverage":coverage(c["cells"])} for c in rows]
+                 "findings":len(c["findings"]),"coverage":coverage(c["cells"])} | campaign_name(c,names,targets) for c in rows]
 
     @app.post("/api/campaigns",status_code=201)
     def create_campaign(body: CampaignCreate,who: Actor=Depends(actor),key: str=Header("",alias="Idempotency-Key")):
