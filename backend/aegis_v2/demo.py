@@ -82,6 +82,8 @@ def seed(platform):
         languages=["tr", "az", "en"], properties=[Property.TOOL, Property.TENANT, Property.OUTPUT],
         families=[Family.TOOL, Family.TENANT, Family.SCHEMA], minimum_tests_per_cell=1,
         max_discovery_attempts=9, max_repair_groups=3,
+        remediation_profile="smoke",reproduction_trials=3,development_fresh_cases=0,
+        final_cases_per_property=3,adaptive_attempts=2,verification_scope="finding",utility_repeats=1,
         limits=ResourceLimits(target_calls=2000, tokens=8000000, wall_seconds=3600)))
     platform.control(actor, campaign["id"], "start")
     for _ in range(500):

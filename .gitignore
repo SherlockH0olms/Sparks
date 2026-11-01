@@ -1,5 +1,8 @@
 .venv/
 .venv-win/
+.venv-redtools/
+.venv-redtools-deep/
+.venv-defensetools/
 node_modules/
 .next/
 __pycache__/

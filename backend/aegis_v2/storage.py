@@ -127,6 +127,22 @@ class Store:
         with self.engine.connect() as conn:
             return list(conn.execute(select(records.c.workspace).distinct()).scalars())
 
+    def iter_records(self, kind: str, workspace: str, *, parent=None, private_access=False):
+        """Stable keyset traversal; exports and analysis have no 1,000-record cap."""
+        last = ""
+        while True:
+            statement = select(records).where(records.c.kind == kind, records.c.workspace == workspace,
+                                               records.c.id > last)
+            if parent is not None:
+                statement = statement.where(records.c.parent == parent)
+            with self.engine.connect() as conn:
+                batch = conn.execute(statement.order_by(records.c.id).limit(500)).mappings().all()
+            if not batch:
+                return
+            for row in batch:
+                yield self._decode(row, private_access) | {"id": row["id"], "_version": row["version"], "_created": row["created"]}
+            last = batch[-1]["id"]
+
     def mutate(self, identifier: str, workspace: str, fn: Callable[[dict], dict], *, private_access=False) -> dict:
         with self.transaction() as conn:
             stmt = select(records).where(records.c.id == identifier, records.c.workspace == workspace)

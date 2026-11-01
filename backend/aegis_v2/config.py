@@ -21,6 +21,9 @@ class ProviderSettings:
     timeout: float | None = None
     max_output_tokens: int | None = None
     tool_mode: str = "auto"
+    extra_headers: dict[str, str] = field(default_factory=dict, repr=False)
+    retry_attempts: int = 1
+    retry_delay_seconds: float = 0.5
 
     def issues(self) -> list[str]:
         out = []
@@ -63,6 +66,12 @@ class Settings:
     local_model: str = ""
     local_api_key: str = field(default="", repr=False)
     local_allowed_hosts: tuple[str, ...] = ("localhost", "127.0.0.1", "::1", "host.docker.internal")
+    local_allowed_networks: tuple[str, ...] = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "fd7a:115c:a1e0::/48")
+    allow_remote_targets: bool = True
+    local_access_client_id: str = field(default="", repr=False)
+    local_access_client_secret: str = field(default="", repr=False)
+    target_retry_attempts: int = 3
+    target_retry_delay_seconds: float = 0.5
     target_timeout: float = 45
     target_max_output_tokens: int = 800
     red: ProviderSettings = field(default_factory=ProviderSettings)
@@ -107,6 +116,12 @@ class Settings:
             local_endpoint=os.getenv("AEGIS_LOCAL_ENDPOINT", "http://127.0.0.1:11434/v1").rstrip("/"),
             local_model=os.getenv("AEGIS_LOCAL_MODEL", ""), local_api_key=os.getenv("AEGIS_LOCAL_API_KEY", ""),
             local_allowed_hosts=tuple(x.strip() for x in os.getenv("AEGIS_LOCAL_ALLOWED_HOSTS", "localhost,127.0.0.1,::1,host.docker.internal").split(",") if x.strip()),
+            local_allowed_networks=tuple(x.strip() for x in os.getenv("AEGIS_LOCAL_ALLOWED_NETWORKS", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10,fd7a:115c:a1e0::/48").split(",") if x.strip()),
+            allow_remote_targets=os.getenv("AEGIS_ALLOW_REMOTE_TARGETS", "true").lower() == "true",
+            local_access_client_id=os.getenv("AEGIS_LOCAL_CF_ACCESS_CLIENT_ID", ""),
+            local_access_client_secret=os.getenv("AEGIS_LOCAL_CF_ACCESS_CLIENT_SECRET", ""),
+            target_retry_attempts=max(1, int(os.getenv("AEGIS_TARGET_RETRY_ATTEMPTS", "3"))),
+            target_retry_delay_seconds=max(0, float(os.getenv("AEGIS_TARGET_RETRY_DELAY_SECONDS", "0.5"))),
             target_timeout=float(os.getenv("AEGIS_TARGET_TIMEOUT_SECONDS", "45")),
             target_max_output_tokens=int(os.getenv("AEGIS_TARGET_MAX_OUTPUT_TOKENS", "800")),
             red=provider("AEGIS_RED"), judge=provider("AEGIS_JUDGE"),

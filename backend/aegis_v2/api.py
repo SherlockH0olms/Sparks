@@ -16,11 +16,15 @@ from .budget import Budget, BudgetExceeded
 from .config import Settings
 from .contracts import Actor, CampaignCreate, Role, TargetCreate, digest, now
 from .providers import ProviderError
+from .red_library import installed_library, LibraryError
 from .reporting import Reporting
 from .runtime import Platform, TERMINAL
 from .scenarios import coverage, target_template
 from .storage import Store, Conflict, NotFound, PrivateAccess
 from .workers import Workers
+from .defenses import CONTROLS
+from .defense_tools import available, tool_catalog
+from .scenarios import build_cells
 
 
 class LoginBody(BaseModel):
@@ -106,6 +110,7 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
     def health():
         return {"status":"ok","version":"2.0.0","auth_configured":len(settings.admin_token)>=32,
                 "red":settings.red.public(),"judge":settings.judge.public(),
+                "red_attack_library":installed_library().summary(),
                 "local_defaults":{"endpoint":settings.local_endpoint,"model":settings.local_model},
                 "workers":workers.status(),"server_time":now(),
                 "fixture_environment":platform.red_client.provenance=="fixture",
@@ -124,6 +129,29 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
         platform.store.event(who.workspace,"system","session_started",{"actor":who.id})
         return who.model_dump(mode="json")
 
+    @app.get("/api/red/library")
+    def red_library(who: Actor=Depends(actor)):
+        return installed_library().list_methods()
+
+    @app.get("/api/red/library/sources")
+    def red_sources(who: Actor=Depends(actor)):
+        return installed_library().sources()
+
+    @app.get("/api/red/library/resources")
+    def red_resources(query: str="", framework: str | None=None, kind: str | None=None,
+                      offset: int=Query(0,ge=0), limit: int=Query(10,ge=1,le=50), who: Actor=Depends(actor)):
+        try:
+            return installed_library().search(query=query, framework=framework, kind=kind, offset=offset, limit=limit)
+        except LibraryError as exc:
+            raise HTTPException(400,str(exc)) from None
+
+    @app.get("/api/red/library/resource/{resource_id}")
+    def red_resource(resource_id: str, who: Actor=Depends(actor)):
+        try:
+            return installed_library().get_resource(resource_id)
+        except LibraryError as exc:
+            raise HTTPException(404,str(exc)) from None
+
     @app.post("/api/auth/logout")
     def logout(request: Request,response: Response,who: Actor=Depends(actor)):
         auth.logout(request.cookies.get("aegis_session",""))
@@ -137,6 +165,25 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
     def template(who: Actor=Depends(actor)):
         require_permission(who,"target")
         return target_template(settings.local_endpoint,settings.local_model)
+
+    @app.get("/api/repair/catalog")
+    def defense_catalog(who: Actor=Depends(actor)):
+        return {"controls": [{"id": key, **value, "available": available(value["tool"])} for key, value in CONTROLS.items()],
+                "tools": tool_catalog().get("tools", []),
+                "references_only": [{"name": "NeMo Guardrails", "url": "https://github.com/NVIDIA/NeMo-Guardrails"},
+                                    {"name": "LLM Guard", "url": "https://github.com/protectai/llm-guard"}]}
+
+    @app.post("/api/campaigns/estimate")
+    def estimate(body: CampaignCreate, who: Actor=Depends(actor)):
+        snapshot = platform.targets.snapshot(who.workspace, body.target_id)
+        cells = [cell for cell in build_cells(body, snapshot) if cell["applicable"]]
+        by_property = {str(prop): sum(c["property"] == prop for c in cells) for prop in body.properties}
+        return {"applicable_cells": len(cells), "cells_per_property": by_property,
+                "minimum_discovery_tests": len(cells) * body.minimum_tests_per_cell,
+                "development_fresh_per_property": {key: count * body.development_fresh_cases for key, count in by_property.items()},
+                "final_pairs_per_property": {key: (count if body.verification_scope == "property" else 1) *
+                    (body.final_cases_per_property + body.adaptive_attempts) for key, count in by_property.items()},
+                "notice": "Final counts are per selected finding group and exclude replay and utility. Each pair tests baseline and candidate; tool-reading calls and multiple turns add calls. This is a protocol count, not a runtime prediction."}
 
     @app.get("/api/targets")
     def list_targets(limit: int=Query(100,ge=1,le=200),offset: int=Query(0,ge=0),who: Actor=Depends(actor)):
@@ -204,15 +251,16 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
     @app.get("/api/campaigns/{campaign_id}/coverage")
     def cells(campaign_id: str,who: Actor=Depends(actor)):
         c=camp(campaign_id,who)
-        return {"metrics":coverage(c["cells"]),"cells":c["cells"]}
+        return {"metrics":coverage(c["cells"]),"cells":c["cells"],
+                "red_diversity":platform.red_diversity(who.workspace,c)}
 
     @app.get("/api/campaigns/{campaign_id}/attempts")
     def attempts(campaign_id: str,phase: str|None=None,limit: int=Query(50,ge=1,le=200),offset: int=Query(0,ge=0),who: Actor=Depends(actor)):
         c=camp(campaign_id,who)
-        rows=platform.store.list("attempt",who.workspace,parent=campaign_id,limit=1000,private_access=True)
+        rows=platform.store.iter_records("attempt",who.workspace,parent=campaign_id,private_access=True)
         if phase:rows=[a for a in rows if a["phase"]==phase]
         # Final inputs stay evaluator-only. Public progress uses aggregate results.
-        rows=[a for a in rows if a["phase"] not in {"final","utility"}]
+        rows=sorted((a for a in rows if a["phase"] not in {"final","utility"}),key=lambda a:(a["_created"],a["id"]))
         return safe(who,c["target_id"],[{"id":a["id"],"phase":a["phase"],"cell":a["cell"],"candidate_digest":a["candidate_digest"],
                "execution_status":a["execution_status"],"verdict":(a["assessment"] or {}).get("verdict"),
                "turns":len(a["candidate"]["turns"]),"response_preview":a["steps"][-1]["trace"].get("response","")[:160] if a["steps"] else "",
@@ -279,10 +327,14 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
     @app.get("/api/campaigns/{campaign_id}/report")
     def report(campaign_id: str,format: str="json",who: Actor=Depends(actor)):
         c=camp(campaign_id,who)
-        markdown=reporting.markdown(who.workspace,campaign_id)
+        model=reporting.model(who.workspace,campaign_id)
+        markdown=reporting.markdown(who.workspace,campaign_id,model)
         if format=="markdown":return PlainTextResponse(markdown,headers={"Content-Disposition":'attachment; filename="aegis-report.md"'})
-        if format=="html":return HTMLResponse(reporting.html(markdown),headers={"Content-Disposition":'attachment; filename="aegis-report.html"'})
-        return {"markdown":markdown,"summary":platform.summary(who.workspace,campaign_id)|{"budget":budget_view(Budget(platform.store,campaign_id,who.workspace).snapshot())},
+        if format=="html":return HTMLResponse(reporting.html(model),headers={"Content-Disposition":'attachment; filename="aegis-report.html"'})
+        if format=="pdf":return Response(reporting.pdf(model),media_type="application/pdf",headers={"Content-Disposition":'attachment; filename="aegis-report.pdf"'})
+        if format=="pptx":return Response(reporting.powerpoint(model),media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",headers={"Content-Disposition":'attachment; filename="aegis-report.pptx"'})
+        if format!="json":raise HTTPException(422,"Choose json, markdown, html, pdf, or pptx.")
+        return {"markdown":markdown,"report":model,"html":reporting.html(model),"summary":platform.summary(who.workspace,campaign_id)|{"budget":budget_view(Budget(platform.store,campaign_id,who.workspace).snapshot())},
                 "verification":[platform.store.get(vid,who.workspace) for vid in c["verification_runs"]]}
 
     @app.get("/api/campaigns/{campaign_id}/evidence-pack")
@@ -294,6 +346,23 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
         pack=reporting.build(who.workspace,campaign_id,sensitive=sensitive,include_final=sensitive)
         platform.store.event(who.workspace,campaign_id,"evidence_exported",{"actor":who.id,"sensitive":sensitive,"content_hash":pack["content_hash"]})
         return JSONResponse(pack,headers={"Content-Disposition":'attachment; filename="aegis-evidence.json"'})
+
+    @app.get("/api/campaigns/{campaign_id}/evidence.ndjson")
+    def evidence_stream(campaign_id: str,sensitive: bool=False,who: Actor=Depends(actor)):
+        require_permission(who,"evidence");c=camp(campaign_id,who)
+        if sensitive:
+            require_permission(who,"admin")
+            if c["state"] not in TERMINAL:raise Conflict("Raw evidence requires a closed experiment.")
+        platform.store.event(who.workspace,campaign_id,"evidence_exported",{"actor":who.id,"sensitive":sensitive,"format":"ndjson"})
+        return StreamingResponse(reporting.ndjson(who.workspace,campaign_id,sensitive=sensitive),
+            media_type="application/x-ndjson",headers={"Content-Disposition":'attachment; filename="aegis-evidence.ndjson"'})
+
+    @app.get("/api/campaigns/{campaign_id}/remediation-bundle")
+    def remediation_bundle(campaign_id: str,who: Actor=Depends(actor)):
+        require_permission(who,"evidence");camp(campaign_id,who)
+        bundle=reporting.bundle(who.workspace,campaign_id)
+        platform.store.event(who.workspace,campaign_id,"remediation_bundle_exported",{"actor":who.id,"bytes":len(bundle)})
+        return Response(bundle,media_type="application/zip",headers={"Content-Disposition":'attachment; filename="aegis-remediation.zip"'})
 
     @app.get("/api/campaigns/{campaign_id}/events")
     async def event_stream(request: Request,campaign_id: str,after_seq: int=Query(0,ge=0),once: bool=False,who: Actor=Depends(actor)):

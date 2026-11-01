@@ -6,6 +6,7 @@ from .budget import Budget, BudgetExceeded
 from .contracts import new_id, now
 from .runtime import ControlSignal, TERMINAL
 from .storage import Conflict
+from .providers import TargetUnavailable
 
 
 class Workers:
@@ -95,6 +96,13 @@ class Workers:
                                   "checkpoint":{"phase":p["phase"],"progress":p["progress"],"saved_at":now()}})
             self.p.store.event(workspace,cid,"campaign_"+state,{"phase":self.p.store.get(cid,workspace)["phase"]})
             final_job_state=state
+        except TargetUnavailable as exc:
+            self.p.store.mutate(cid, workspace, lambda p: p | {"state": "paused", "control": None,
+                "error": {"type": "TargetUnavailable", "message": str(exc)},
+                "checkpoint": {"phase": p["phase"], "progress": p["progress"], "saved_at": now(), "reason": "target_connection"}})
+            self.p.store.event(workspace, cid, "target_connection_paused", {"phase": self.p.store.get(cid, workspace)["phase"],
+                "action": "Check the target connection and resume this campaign."})
+            final_job_state = "paused"
         except Exception as exc:
             state="budget_exhausted" if isinstance(exc,BudgetExceeded) else "failed"
             self.p.store.mutate(cid,workspace,lambda p:p|{"state":state,"error":{"type":type(exc).__name__,"message":str(exc)[:500]},

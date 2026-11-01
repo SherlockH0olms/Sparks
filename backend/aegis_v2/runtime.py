@@ -12,7 +12,7 @@ from .config import Settings
 from .contracts import (Actor, AttackCandidate, CampaignCreate, CampaignState, DefenseConfig,
                         Property, Verdict, digest, attack_digest, new_id, now)
 from .evaluation import Evaluator, utility_assessment
-from .providers import ChatClient, BudgetedChat, ProviderError
+from .providers import ChatClient, BudgetedChat, ProviderError, TargetUnavailable
 from .red import RedGenerator, InvalidCandidate
 from .scenarios import build_cells, coverage, choose_cell, IMPORTANCE
 from .storage import Store, NotFound, Conflict
@@ -36,7 +36,8 @@ class Platform:
         self.worker_context = threading.local()
 
     def generator(self, workspace):
-        return RedGenerator(BudgetedChat(self.store, workspace, self.red_client, "generator_calls"))
+        return RedGenerator(BudgetedChat(self.store, workspace, self.red_client, "generator_calls"),
+                            check_control=lambda budget: self.check_control(workspace, budget.id.removeprefix("budget_")))
 
     def evaluator(self, workspace, target_id):
         judge = BudgetedChat(self.store, workspace, self.judge_client, "judge_calls") if self.judge_client.ready() else None
@@ -75,7 +76,23 @@ class Platform:
                                 "error", "started_at", "finished_at", "checkpoint", "created_by")} | {
             "coverage": coverage(c["cells"]), "attempts": len(c["discovery_attempts"]), "findings": len(c["findings"]),
             "groups": len(c["groups"]), "experiments": len(c["experiments"]), "verification_runs": len(c["verification_runs"]),
+            "red_diversity": self.red_diversity(workspace, c),
             "budget": Budget(self.store, campaign_id, workspace).snapshot()}
+
+    def red_diversity(self, workspace, campaign):
+        strategies = [self.store.get(aid, workspace, private_access=True)["candidate"].get("red_strategy", {})
+                      for aid in campaign["discovery_attempts"]]
+        methods = Counter(s["method_id"] for s in strategies if s.get("method_id"))
+        transforms = [t for s in strategies for t in s.get("transformations", [])]
+        return {"generated_candidates": len(strategies), "distinct_methods": len(methods), "method_counts": dict(methods),
+                "distinct_resources": len({r["id"] for s in strategies for r in s.get("resources", [])}),
+                "distinct_tactics_read": len({t for s in strategies for t in s.get("tactic_ids", [])}),
+                "tactic_compositions": sum(len(s.get("compositions", [])) for s in strategies),
+                "distinct_tactics_composed": len({t for s in strategies for c in s.get("compositions", []) for t in c["tactic_ids"]}),
+                "transformation_calls": len(transforms), "applied_transformations": sum(t["applied"] for t in transforms),
+                "frameworks_used": sorted({r["framework"] for s in strategies for r in s.get("resources", [])} |
+                                          {t["framework"] for t in transforms}),
+                "unattributed_candidates": sum(not s.get("method_id") for s in strategies)}
 
     def control(self, actor: Actor, campaign_id: str, action: str):
         require_permission(actor, "campaign")
@@ -88,7 +105,9 @@ class Platform:
         elif action == "resume":
             if c["state"] != "paused":
                 raise Conflict("Only a paused campaign can be resumed.")
-            self.store.mutate(campaign_id, actor.workspace, lambda p: p | {"state": "queued", "control": None})
+            self.store.mutate(campaign_id, actor.workspace, lambda p: p | {"state": "queued", "control": None,
+                "connection_epoch": p.get("connection_epoch", 0) + int((p.get("error") or {}).get("type") == "TargetUnavailable"),
+                "error": None if (p.get("error") or {}).get("type") == "TargetUnavailable" else p.get("error")})
             self.store.mutate("job_" + campaign_id, actor.workspace, lambda p: p | {"state": "queued", "owner": None, "lease_until": 0})
         elif action == "pause":
             if c["state"] in TERMINAL or c["state"] in {"draft", "paused"}:
@@ -162,12 +181,14 @@ class Platform:
         for index in range(len(attempt["steps"]), len(candidate["turns"])):
             self.check_control(workspace, campaign_id)
             message = candidate["turns"][index]
-            operation_id = digest({"attempt": identifier, "turn": index})[:40]
+            operation_id = digest({"attempt": identifier, "turn": index, "connection_epoch": c.get("connection_epoch", 0)})[:40]
             try:
                 trace = app.run_turn(message, tenant, history, budget, bucket, operation_id,
                        injected_document=attempt["injected_document"],
                        permissions=[utility_case["expected_tool"]] if utility_case and utility_case.get("expected_tool") else [],
                        expect_json=bool(utility_case.get("expect_json")) if utility_case else cell["property"] == "output_integrity")
+            except TargetUnavailable:
+                raise
             except ProviderError as exc:
                 trace = {"status": exc.status.value, "response": "", "retrieval": [], "tools": [], "error": str(exc), "call_ids": []}
             if utility_case:
@@ -204,7 +225,7 @@ class Platform:
         self.phase(workspace, campaign_id, "preflight")
         caller = BudgetedChat(self.store, workspace, self.targets.client(snapshot), "target_calls")
         response = caller.invoke([{"role": "user", "content": "Reply with READY."}], Budget(self.store,campaign_id,workspace),
-                                 "baseline", digest(campaign_id + "_preflight")[:40], "campaign_preflight")
+                                 "baseline", digest(campaign_id + "_preflight_" + str(c.get("connection_epoch", 0)))[:40], "campaign_preflight")
         if not response.content.strip() and not response.tool_calls:
             raise ProviderError("The local model returned an empty preflight response.")
         self.phase(workspace, campaign_id, "baselining")
@@ -221,7 +242,7 @@ class Platform:
                 results.append(self.store.get(aid,workspace,private_access=True)["assessment"])
             summary = {"questions": len(results), "valid": sum(r["valid"] for r in results),
                        "answered": sum(r["passed"] for r in results), "false_blocks": sum(r["false_block"] for r in results),
-                       "utility": sum(r["passed"] for r in results)/len(results) if results else None}
+                       "utility": sum(r["passed"] for r in results)/len(results) if results and all(r["valid"] for r in results) else None}
             self.store.mutate(campaign_id,workspace,lambda p:p|{"baseline":summary})
             self.phase(workspace,campaign_id,"discovering")
             return
@@ -239,6 +260,9 @@ class Platform:
         for aid in c["discovery_attempts"]:
             a = self.store.get(aid,workspace,private_access=True)
             row = {"scenario":a["cell"]["family"],"language":a["cell"]["language"]}
+            row["prior_attack"] = {k: a["candidate"].get(k) for k in ("turns", "document_body", "hypothesis")}
+            if a["candidate"].get("red_strategy"):
+                row["red_strategy"] = a["candidate"]["red_strategy"]
             if "public_response" in snapshot["red_observations"]:
                 row["public_response"]=[s["trace"].get("response","") for s in a["steps"]]
             if "refusal" in snapshot["red_observations"]:

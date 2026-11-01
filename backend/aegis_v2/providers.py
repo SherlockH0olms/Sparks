@@ -23,6 +23,14 @@ class UnsupportedTools(ProviderError):
     pass
 
 
+class TransientProviderError(ProviderError):
+    pass
+
+
+class TargetUnavailable(TransientProviderError):
+    pass
+
+
 @dataclass
 class ChatResult:
     content: str
@@ -64,10 +72,15 @@ class ChatClient:
             # dated inference API's api-version query parameter.
             params = {} if "/openai/v1" in urlsplit(endpoint).path else {"api-version": s.api_version}
             headers = {"api-key": s.api_key}
+        elif s.provider == "ollama":
+            url = endpoint + "/api/chat"
+            params = {}
+            headers = {"Authorization": "Bearer " + s.api_key} if s.api_key else {}
         else:
             url = endpoint + ("" if endpoint.endswith("/chat/completions") else "/chat/completions")
             params = {}
             headers = {"Authorization": "Bearer " + s.api_key} if s.api_key else {}
+        headers.update(s.extra_headers)
         return url, params, headers
 
     def chat(self, messages: list[dict], tools: list[dict] | None = None) -> ChatResult:
@@ -80,15 +93,35 @@ class ChatClient:
         payload = {"messages": messages}
         if s.max_output_tokens is not None:
             payload[token_field] = s.max_output_tokens
+        elif self.local and s.provider != "ollama":
+            payload[token_field] = None
         if s.provider != "azure_openai":
             payload["model"] = s.model
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
+        if s.provider == "ollama":
+            payload.pop(token_field, None)
+            payload.pop("tool_choice", None)
+            payload["stream"] = False
+            if s.max_output_tokens is not None:
+                payload["options"] = {"num_predict": s.max_output_tokens}
+            else:
+                payload["options"] = {"num_predict": -1}
         try:
             with httpx.Client(timeout=s.timeout, transport=self.transport, follow_redirects=False, trust_env=False) as client:
                 response = client.post(url, params=params, headers=headers, json=payload)
             if response.status_code >= 400:
+                # ngrok uses 404 when a previously valid tunnel goes offline.
+                # Keep ordinary missing model/routes permanent; only the
+                # explicit edge error identifies a recoverable target outage.
+                if self.local and response.status_code == 404 and (
+                    response.headers.get("ngrok-error-code") == "ERR_NGROK_3200"
+                    or "ERR_NGROK_3200" in response.text
+                ):
+                    raise TransientProviderError("The ngrok model endpoint is offline (ERR_NGROK_3200).")
+                if response.status_code in {408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530}:
+                    raise TransientProviderError(f"Model endpoint temporarily unavailable (HTTP {response.status_code}).")
                 if tools and response.status_code in {400, 422}:
                     try:
                         error = response.json().get("error", {})
@@ -100,6 +133,14 @@ class ChatClient:
                         raise UnsupportedTools("This deployment does not support native function calling.")
                 raise ProviderError(f"Provider returned HTTP {response.status_code}; request did not complete.")
             data = response.json()
+            if s.provider == "ollama":
+                message = data["message"]
+                native_calls = message.get("tool_calls") or []
+                calls = [{"id": "ollama_" + str(i), "type": "function", "function": {
+                    "name": call["function"]["name"], "arguments": json.dumps(call["function"].get("arguments", {}))}}
+                    for i, call in enumerate(native_calls)]
+                usage = {"total_tokens": data.get("prompt_eval_count", 0) + data.get("eval_count", 0)}
+                return ChatResult(message.get("content") or "", calls, usage, data.get("done_reason", "stop"))
             choice = data["choices"][0]
             message = choice["message"]
             content = message.get("content") or ""
@@ -115,7 +156,9 @@ class ChatClient:
                               choice.get("finish_reason", ""), response.headers.get("x-request-id", data.get("id", "")),
                               reasoning if isinstance(reasoning, str) else None)
         except httpx.TimeoutException:
-            raise ProviderError("Provider timed out; no security result was inferred.", ExecutionStatus.TIMEOUT) from None
+            raise TransientProviderError("Provider timed out; no security result was inferred.", ExecutionStatus.TIMEOUT) from None
+        except httpx.RequestError:
+            raise TransientProviderError("The model connection was interrupted.") from None
         except (httpx.HTTPError, KeyError, ValueError, TypeError, IndexError):
             raise ProviderError("Provider response or connection was invalid.") from None
 
@@ -125,9 +168,24 @@ class BudgetedChat:
         self.store, self.workspace, self.client, self.resource = store, workspace, client, resource
 
     def invoke(self, messages, budget: Budget, bucket: str, operation_id: str, purpose: str, tools=None):
+        attempts = self.client.settings.retry_attempts if self.client.local else 1
+        for index in range(attempts):
+            oid = operation_id if index == 0 else operation_id + "_retry_" + str(index)
+            try:
+                return self._invoke_once(messages, budget, bucket, oid, purpose, tools)
+            except TransientProviderError as exc:
+                if index + 1 == attempts:
+                    if self.client.local:
+                        raise TargetUnavailable("Target connection is unavailable. Check the model server, LAN/Tailscale route, or Cloudflare/ngrok tunnel, then resume.", exc.status) from None
+                    raise
+                delay = min(5, self.client.settings.retry_delay_seconds * (2 ** index))
+                if delay:
+                    time.sleep(delay)
+
+    def _invoke_once(self, messages, budget: Budget, bucket: str, operation_id: str, purpose: str, tools=None):
         call_id = "call_" + operation_id
         request_hash = digest({"messages": messages, "tools": tools, "model": self.client.settings.model,
-                               "provider": self.client.settings.provider})
+                               "provider": self.client.settings.provider, "endpoint": self.client.settings.endpoint})
         try:
             prior = self.store.get(call_id, self.workspace, private_access=True)
         except NotFound:
@@ -137,6 +195,10 @@ class BudgetedChat:
                 raise ProviderError("An operation identifier was reused with a different request.")
             if prior["status"] == "completed":
                 return ChatResult(**prior["response"])
+            if prior.get("error_type") == "UnsupportedTools":
+                raise UnsupportedTools("This deployment does not support native function calling.")
+            if prior.get("retryable"):
+                raise TransientProviderError("A previous interrupted connection is preserved.", ExecutionStatus(prior["status"]))
             raise ProviderError("An interrupted or failed request is preserved and will not be silently repeated.",
                                 ExecutionStatus(prior["status"]))
         if not self.client.ready():
@@ -164,7 +226,8 @@ class BudgetedChat:
             result = self.client.chat(messages, tools)
         except ProviderError as exc:
             budget.settle(operation_id, reserved | {"wall_seconds": time.perf_counter() - started}, status=exc.status.value)
-            self.store.mutate(call_id, self.workspace, lambda p: p | {"status": exc.status.value, "error": str(exc)}, private_access=True)
+            self.store.mutate(call_id, self.workspace, lambda p: p | {"status": exc.status.value,
+                             "error": str(exc), "error_type": type(exc).__name__, "retryable": isinstance(exc, TransientProviderError)}, private_access=True)
             raise
         elapsed = time.perf_counter() - started
         usage = result.usage
