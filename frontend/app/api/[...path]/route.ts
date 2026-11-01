@@ -27,7 +27,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     for (const name of ["connection", "transfer-encoding", "content-encoding", "content-length"]) responseHeaders.delete(name);
     return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
   } catch {
-    return Response.json({ detail: "Platform API bağlantısı kurulamadı. Backend sunucusunu kontrol edin." }, { status: 503 });
+    return Response.json({ detail: "Cannot reach the platform API. Check that the backend server is running and AEGIS_API points to its address." }, { status: 503 });
   }
 }
 
