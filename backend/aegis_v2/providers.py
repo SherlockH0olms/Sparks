@@ -93,8 +93,6 @@ class ChatClient:
         payload = {"messages": messages}
         if s.max_output_tokens is not None:
             payload[token_field] = s.max_output_tokens
-        elif self.local and s.provider != "ollama":
-            payload[token_field] = None
         if s.provider != "azure_openai":
             payload["model"] = s.model
         if tools:

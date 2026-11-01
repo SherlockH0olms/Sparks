@@ -51,7 +51,13 @@
     ".next-live/types/**/*.ts",
     ".next-live/dev/types/**/*.ts",
     ".next-release-main-20261101-071059-422653/types/**/*.ts",
-    ".next-release-main-20261101-071059-422653/dev/types/**/*.ts"
+    ".next-release-main-20261101-071059-422653/dev/types/**/*.ts",
+    ".next-release-main-20261101-073129-941261/types/**/*.ts",
+    ".next-release-main-20261101-073129-941261/dev/types/**/*.ts",
+    ".next-release-main-20261101-074341-388689/types/**/*.ts",
+    ".next-release-main-20261101-074341-388689/dev/types/**/*.ts",
+    ".next-architecture-preview/types/**/*.ts",
+    ".next-architecture-preview/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
