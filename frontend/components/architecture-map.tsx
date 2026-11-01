@@ -71,7 +71,7 @@ function ArchitectureScene({ selected, prefix }: { selected: RoleId; prefix: str
 
     <g className={`architecture-route route-red ${selected==="red"||selected==="control"?"is-emphasized":""}`} fill="none" stroke={colors.red}>
       <path d="M245 172h52q20 0 20 20v43h40" strokeWidth="1.2" markerEnd={`url(#${prefix}-arrow-red)`}/>
-      <path d="M468 242h40q23 0 23-23v-58q0-21 22-21h266" strokeWidth="1.1" markerEnd={`url(#${prefix}-arrow-red)`}/>
+      <path d="M468 242h8q21 0 21-23v-58q0-21 22-21h300" strokeWidth="1.1" markerEnd={`url(#${prefix}-arrow-red)`}/>
       <text x="621" y="130" stroke="none" fill={colors.red} fontSize="10" letterSpacing="1.2">WRITE / TEST INPUT</text>
     </g>
     <g className={`architecture-route route-target ${selected==="target"||selected==="red"?"is-emphasized":""}`} fill="none" stroke={colors.target}>
@@ -98,8 +98,8 @@ function ArchitectureScene({ selected, prefix }: { selected: RoleId; prefix: str
 
     <g fill="#e5eaf1" fontSize="15">
       <text x="185" y="270" textAnchor="middle">Red model</text>
-      <text x="551" y="68" textAnchor="middle" fontSize="13">AEGIS Loop</text>
-      <text x="914" y="258" textAnchor="middle">Target application</text>
+      <text x="551" y="178" textAnchor="middle" fontSize="13">AEGIS Loop</text>
+      <text x="914" y="266" textAnchor="middle">Target application</text>
       <text x="922" y="480" textAnchor="middle">Independent evaluation</text>
     </g>
     <g fill="#7e8ea3" fontSize="9.5" letterSpacing="1.1">
@@ -118,7 +118,7 @@ function ArchitectureScene({ selected, prefix }: { selected: RoleId; prefix: str
       <rect x="0" y="0" width="290" height="23" fill="#85cbb505" stroke="#527e70" strokeOpacity=".5"/>
       <path d="M11 8V5a3 3 0 0 1 6 0v3m-7 0h8v9h-8V8Z" fill="none" stroke={colors.judge} strokeWidth=".8"/>
       <text x="27" y="15" fill="#96b8ac" fontSize="9" letterSpacing=".7">EVALUATOR ONLY / PROTECTED ORACLE</text>
-      <path d="M147 0v-14" stroke={colors.judge} strokeDasharray="3 4"/>
+      <path d="M270 0v-96h-53" stroke={colors.judge} strokeDasharray="3 4" markerEnd={`url(#${prefix}-arrow-judge)`}/>
     </g>
 
     <g transform="translate(315 424)">
@@ -138,25 +138,25 @@ export function ArchitectureMap({ health, targetCount, campaignId }: { health: H
   const [selected,setSelected] = useState<RoleId>("control");
   const prefix = "aegis-architecture-" + useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const role = roles.find(r=>r.id===selected)!;
-  const model = (id:RoleId) => id==="red" ? health?.red.model || "Not configured" : id==="judge" ? health?.judge.model || "Not configured" : id==="target" ? `${targetCount} registered targets` : "Access · Scope · Evidence";
+  const model = (id:RoleId) => id==="red" ? health?.red.model || "Not configured" : id==="judge" ? health?.fixture_environment ? "Server-owned fixture checks" : health?.judge.model || "Not configured" : id==="target" ? `${targetCount} registered target${targetCount===1?"":"s"}` : "Access · Scope · Evidence";
   const ready = (id:RoleId) => id==="red" ? health?.red.configured : id==="judge" ? health?.judge.configured || health?.fixture_environment : id==="target" ? targetCount>0 : health?.status==="ok";
-  const status = (id:RoleId) => ready(id) ? id==="target" ? "Targets registered" : id==="control" ? "API connected" : "Configured" : "Setup required";
+  const status = (id:RoleId) => ready(id) ? id==="target" ? "Targets registered" : id==="control" ? "API connected" : id==="judge"&&health?.fixture_environment ? "Fixture evaluation" : "Configured" : "Setup required";
   const href = role.link + (campaignId ? "?campaign="+encodeURIComponent(campaignId) : "");
   const library = health?.red_attack_library;
   return <section className="architecture-map" aria-label="Security architecture" data-selected-role={selected}>
     <header className="architecture-header">
-      <div><span className="architecture-kicker">AEGIS / SYSTEM ARCHITECTURE</span><h2>Intelligence, connected to evidence.</h2><p>Four model roles. Explicit trust boundaries. One security experiment.</p></div>
-      <div className="architecture-health"><span className={health?.status==="ok"?"architecture-online":""}/>{health?.status==="ok"?"Control plane online":"Checking connection"}<small>{health?.workers.active_jobs ?? 0} active workers</small></div>
+      <div><span className="architecture-kicker">AEGIS / SYSTEM ARCHITECTURE</span><h2>Anatomy of a security experiment.</h2><p>Four roles. Explicit trust boundaries. One evidence trail.</p></div>
+      <div className="architecture-health"><span className={health?.status==="ok"?"architecture-online":""}/>{health?.status==="ok"?"Control plane online":health?"Control plane unavailable":"Checking connection"}<small>{health?.workers.active_jobs ?? 0} active campaigns</small></div>
     </header>
     <div className="architecture-role-nav" aria-label="Explore the model roles">
-      {roles.map(r=><button key={r.id} type="button" className={"architecture-role "+(selected===r.id?"is-selected":"")} aria-pressed={selected===r.id} onClick={()=>setSelected(r.id)} style={{"--role-color":colors[r.id]} as React.CSSProperties}>
+      {roles.map(r=><button key={r.id} type="button" className={"architecture-role "+(selected===r.id?"is-selected":"")} aria-pressed={selected===r.id} aria-controls={`${prefix}-inspector`} onClick={()=>setSelected(r.id)} style={{"--role-color":colors[r.id]} as CSSProperties}>
         <div className="architecture-role-rule"><span>{r.number}</span><span>{r.title}</span><Icon name="arrow" size={14}/></div>
         <strong>{r.label}</strong><span className="architecture-model">{model(r.id)}</span>
         <span className={"architecture-role-status "+(ready(r.id)?"is-ready":"")}><i/>{status(r.id)}</span>
       </button>)}
     </div>
-    <div className="architecture-drawing"><ArchitectureScene selected={selected} prefix={prefix}/><div className="architecture-mobile-mark"><OrbitMobile color={colors[selected]}/><span>{role.number} / {role.title}</span><strong>{role.label}</strong></div></div>
-    <div className="architecture-inspector" style={{"--role-color":colors[selected]} as React.CSSProperties} aria-live="polite">
+    <div className="architecture-drawing"><ArchitectureScene selected={selected} prefix={prefix}/><div className="architecture-mobile-mark"><OrbitMobile color={colors[selected]}/><span>{role.number} / {role.title}</span><strong>{role.label}</strong><p>Attack → Observe → Reproduce → Verify</p></div></div>
+    <div id={`${prefix}-inspector`} className="architecture-inspector" style={{"--role-color":colors[selected]} as React.CSSProperties} aria-live="polite">
       <div className="architecture-inspector-title"><span className="architecture-inspector-icon"><Icon name={role.icon} size={22}/></span><div><span className="architecture-kicker">SELECTED ROLE / {role.number}</span><h3>{role.label}</h3></div></div>
       <div className="architecture-inspector-body"><p>{role.description}</p><div className="architecture-permissions"><span><b>READ</b>{role.read}</span><span><b>WRITE</b>{role.write}</span></div></div>
       <Link href={href} className="architecture-detail-link">{role.action}<Icon name="arrow" size={16}/></Link>
