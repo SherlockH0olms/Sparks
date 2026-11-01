@@ -27,9 +27,10 @@ export const guideSteps: GuideStep[] = [
     actions:[
       "Start a model API server, then select Add target on Targets. Choose localhost, LAN, Tailscale, Cloudflare, ngrok, Kaggle/Colab tunnel, or Custom. Registration connects to your server; it does not download model weights.",
       "Select OpenAI-compatible chat (usually a /v1 base) or native Ollama (server root). Enter the actual URL, model identifier, pinned weight version, application version, and task policy. Choose environment authentication, no API key, or a target-specific key. Cloudflare Access service tokens use the separate client ID and secret fields.",
-      "In Documents and tasks, review the sample JSON. Documents have tenant ownership; assigned_to_red marks the document Red may replace during a document injection test. Normal-use cases describe questions the assistant should still answer correctly.",
+      "In Documents and tasks, expand a document card to edit its title, owner group, and content. Enable Allow Red to edit only for documents assigned to injection testing. Add normal-use tasks with a user question, group, and expected answer terms, one phrase per line. No JSON editing is required.",
       "In Access and controls, declare the capabilities your application actually supports, its starting defenses, writable attack surfaces, and feedback available to Red. Review the snapshot and select Save target.",
       "Select Test connection on the target card. A successful check confirms that the registered target responds from the platform backend. Resolve connection errors before creating a campaign.",
+      "For Granite, use the Granite quick start card: paste the latest ngrok URL, select Connect Granite, then Set up and start test. The model and test workspace are prefilled. Review campaign scope and select Create and start test. Changed URLs are saved as new target versions.",
     ],
     expected:"A versioned target appears in the registry with a connection check result, document count, and normal-use test count.",
     terms:[

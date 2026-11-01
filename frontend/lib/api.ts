@@ -44,7 +44,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     if (response.status === 401 && typeof window !== "undefined") window.dispatchEvent(new Event("aegis-auth-expired"));
-    const detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail ?? response.statusText);
+    const detail = typeof body.detail === "string" ? body.detail : Array.isArray(body.detail)
+      ? body.detail.map((issue: {loc?: (string|number)[]; msg?: string}) => `${(issue.loc ?? []).filter(v => v !== "body").map(v => typeof v === "number" ? `item ${v + 1}` : label(v)).join(" / ")}: ${issue.msg ?? "Check this value"}`).join(". ")
+      : response.statusText || "The request could not be completed.";
     throw new ApiError(response.status, detail);
   }
   return response.json();
