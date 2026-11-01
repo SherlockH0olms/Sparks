@@ -108,7 +108,7 @@ def create_app(settings: Settings | None = None, *, platform: Platform | None = 
 
     @app.get("/api/health")
     def health():
-        return {"status":"ok","version":"2.0.0","auth_configured":len(settings.admin_token)>=32,
+        return {"status":"ok","version":"2.0.0","instance_id":settings.instance_id,"auth_configured":len(settings.admin_token)>=32,
                 "red":settings.red.public(),"judge":settings.judge.public(),
                 "red_attack_library":installed_library().summary(),
                 "local_defaults":{"endpoint":settings.local_endpoint,"model":settings.local_model},

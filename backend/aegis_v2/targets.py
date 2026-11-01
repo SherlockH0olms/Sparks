@@ -43,7 +43,7 @@ def validate_local_endpoint(endpoint: str, settings: Settings, *, registered=Fal
     except ValueError:
         allowed = allowed or parsed.hostname.endswith(".ts.net")
     if not allowed and not (registered and settings.allow_remote_targets and parsed.scheme == "https"):
-        raise ValueError("Register an HTTPS target or add its host to AEGIS_LOCAL_ALLOWED_HOSTS / AEGIS_LOCAL_ALLOWED_NETWORKS.")
+        raise ValueError(f"Connection to {parsed.hostname} is blocked by the platform's endpoint policy. Use an HTTPS model URL. If remote targets are disabled, the administrator must enable AEGIS_ALLOW_REMOTE_TARGETS or add this exact host to AEGIS_LOCAL_ALLOWED_HOSTS.")
     return endpoint.rstrip("/")
 
 

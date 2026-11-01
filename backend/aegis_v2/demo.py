@@ -59,9 +59,9 @@ def transports():
 
 
 def build_platform(runtime_dir: Path | None = None):
-    runtime = runtime_dir or ROOT / ".runtime" / "demo"
+    runtime = runtime_dir or Path(os.getenv("AEGIS_DEMO_RUNTIME_DIR", str(ROOT / ".runtime" / "demo")))
     settings = replace(Settings(), database_url="sqlite:///" + str(runtime / "demo.db"),
-                       runtime_dir=runtime, admin_token=DEMO_KEY,
+                       runtime_dir=runtime, admin_token=DEMO_KEY, instance_id=os.getenv("AEGIS_INSTANCE_ID", ""),
                        allowed_origins=tuple(os.getenv("AEGIS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")),
                        red=ProviderSettings(endpoint="https://fixture.invalid/models", api_key="fixture", model="offline-fixture"))
     store = Store(settings.database_url, "", runtime)

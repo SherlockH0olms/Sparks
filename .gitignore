@@ -5,6 +5,7 @@
 .venv-defensetools/
 node_modules/
 .next/
+.next-*/
 __pycache__/
 *.pyc
 .pytest_cache/

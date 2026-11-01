@@ -41,6 +41,17 @@ def test_api_authentication_role_and_workspace_boundaries(platform):
         assert client.get("/api/auth/me").status_code==401
 
 
+def test_dynamic_origin_and_instance_identity_preserve_login_boundaries(platform):
+    from dataclasses import replace
+    p, _, _, _ = platform
+    settings = replace(p.settings, instance_id="launcher-test-instance", allowed_origins=("http://127.0.0.1:39123",))
+    with TestClient(create_app(settings, platform=p, start_workers=False)) as client:
+        assert client.get("/api/health").json()["instance_id"] == "launcher-test-instance"
+        assert client.post("/api/auth/login", headers={"Origin": "http://127.0.0.1:3002"}, json={"key": "a" * 40}).status_code == 403
+        assert client.post("/api/auth/login", headers={"Origin": "http://127.0.0.1:39123"}, json={"key": "a" * 40}).status_code == 200
+        assert client.get("/api/auth/me").status_code == 200
+
+
 def test_red_library_api_requires_login_and_exposes_only_component_metadata(platform):
     p,_,_,_=platform
     with TestClient(create_app(p.settings,platform=p,start_workers=False)) as client:

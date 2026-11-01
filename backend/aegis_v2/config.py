@@ -61,6 +61,7 @@ class Settings:
     lease_seconds: int = 90
     session_hours: int = 8
     cookie_secure: bool = False
+    instance_id: str = ""
     allowed_origins: tuple[str, ...] = ("http://localhost:3000", "http://127.0.0.1:3000")
     local_endpoint: str = "http://127.0.0.1:11434/v1"
     local_model: str = ""
@@ -106,12 +107,12 @@ class Settings:
         if database_url.startswith("sqlite:///./"):
             database_url = "sqlite:///" + str(ROOT / database_url.removeprefix("sqlite:///./"))
         return cls(
-            database_url=database_url, admin_token=os.getenv("AEGIS_ADMIN_TOKEN", ""),
+            database_url=database_url, runtime_dir=Path(os.getenv("AEGIS_RUNTIME_DIR", str(ROOT / ".runtime"))).resolve(), admin_token=os.getenv("AEGIS_ADMIN_TOKEN", ""),
             vault_key=os.getenv("AEGIS_VAULT_KEY", ""),
             workers=max(1, min(8, int(os.getenv("AEGIS_WORKERS", "2")))),
             lease_seconds=max(30, int(os.getenv("AEGIS_LEASE_SECONDS", "90"))),
             session_hours=max(1, int(os.getenv("AEGIS_SESSION_HOURS", "8"))),
-            cookie_secure=os.getenv("AEGIS_COOKIE_SECURE", "false").lower() == "true",
+            cookie_secure=os.getenv("AEGIS_COOKIE_SECURE", "false").lower() == "true", instance_id=os.getenv("AEGIS_INSTANCE_ID", ""),
             allowed_origins=tuple(x.strip() for x in os.getenv("AEGIS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if x.strip()),
             local_endpoint=os.getenv("AEGIS_LOCAL_ENDPOINT", "http://127.0.0.1:11434/v1").rstrip("/"),
             local_model=os.getenv("AEGIS_LOCAL_MODEL", ""), local_api_key=os.getenv("AEGIS_LOCAL_API_KEY", ""),

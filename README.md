@@ -75,7 +75,9 @@ Edit the generated `.env`, enter provider settings, then start:
 .\.venv-win\Scripts\python.exe scripts\run.py --mode production --api-port 8002 --web-port 3002 --open
 ```
 
-Open **http://127.0.0.1:3002**, and sign in with `AEGIS_ADMIN_TOKEN` from `.env`. API documentation: **http://127.0.0.1:8002/docs**. Default ports are 3000/8000; these examples use 3002/8002. Ctrl+C stops both servers.
+Open the **platform address printed by the launcher**, and sign in with `AEGIS_ADMIN_TOKEN` from `.env`. The launcher also prints the API documentation address. The ports above are preferences: if either is occupied, the launcher reserves another available loopback port, updates the frontend proxy and allowed browser origins, and checks that both services belong to the same launch. Ctrl+C stops this launch's servers.
+
+Use `--api-port 0 --web-port 0` to request OS-assigned ports. Use `--strict-ports` for fixed deployment or test mappings. `--plan` prints an available pair without starting servers or changing files. Generic launch details are saved in `.runtime/launcher-production.json`.
 
 Use `--mode dev` during frontend development. Production mode builds if no build exists; rebuild after frontend changes before starting production again. [`run.ps1`](run.ps1) is an alternative wrapper. Direct Python commands avoid PowerShell script execution-policy dependencies.
 
@@ -154,6 +156,10 @@ Blank/`null` campaign budgets mean uncapped where supported. A campaign resource
 
 Select **Targets → Add target**, choose the hosting label and API protocol, enter the actual address/model/revision, then test the connection.
 
+The four-step target wizard uses document and normal-task forms, followed by a readable configuration review. Expand a document to edit its owner and content; add expected answer phrases to a task one per line. JSON editing is not required.
+
+**Granite quick start** prefills `granite-4.2-8b`, the `granite-4.2-8b-Q4_K_M.gguf` file label, application policy, three test documents, and eight normal-use tasks. Paste the latest ngrok HTTPS URL → **Connect Granite** → **Set up and start test** → review the scope → **Create and start test**. The URL is remembered in the browser. Different URLs receive different target snapshots; earlier campaign records remain reproducible. The preset uses the explicit application tool adapter; the file label is not a verified weight checksum.
+
 | Deployment | Example OpenAI-compatible base | Requirement |
 |---|---|---|
 | This computer | `http://127.0.0.1:11434/v1` | Inference runs on the backend machine. |
@@ -175,6 +181,12 @@ Additional private hostnames use `AEGIS_LOCAL_ALLOWED_HOSTS`; supported LAN/Tail
 ## Platform walkthrough
 
 The sidebar's **How to use** guide explains the entire workflow. Every page includes **How to use this page**; Overview also provides onboarding instructions.
+
+On this Windows workspace, **Open AEGIS Live.cmd** opens the full English platform using the saved live Granite workspace. **3002/8008 are preferred web/API ports**, with automatic fallback when occupied. The actual link is printed and saved in `.runtime/PLATFORM-URL.txt` and `.runtime/OPEN-PLATFORM.url`. Double-clicking again reuses a healthy instance of the selected release. A launch lock prevents simultaneous updates; identified workspace backends with active campaigns are preserved. Unrelated applications are left running.
+
+Production, demo, and development builds use separate directories. The default Next.js directory is `.next-live`; old `.next` caches are never selected by the launchers. Once the new English platform passes validation, the Windows launcher retires the identified obsolete Turkish interface. Databases, vault keys, targets, and reports are retained. The English offline demo remains an explicit demonstration; it cannot be used for real Granite calls.
+
+To build the actual platform explicitly, run `.venv-win\Scripts\python.exe scripts/build-production.py` from the project root. The command compiles the backend, builds a separate English frontend release, validates the application pages, and checks the saved live workspace. **Open MAIN Build.cmd** then starts that exact release. The launcher verifies sign-in, the Granite registry/template, backend identity, and the rendered pages before opening the browser. In **Targets → Granite test template**, paste the current ngrok URL → **Connect Granite** → **Set up and start test** → **Create and start test**. The latest registered URL can be restored from the server when the platform's port changes.
 
 | Page | User action | What it explains |
 |---|---|---|

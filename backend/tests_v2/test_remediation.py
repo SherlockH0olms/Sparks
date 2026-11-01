@@ -37,6 +37,7 @@ HEADERS = {"Authorization": "Bearer " + "a" * 40, "Idempotency-Key": "test-targe
     ("lan", "http://10.2.3.4/v1"), ("tailscale", "http://100.100.10.10:8000/v1"),
     ("tailscale", "http://model.tailnet.ts.net:8000/v1"), ("tailscale", "http://[fd7a:115c:a1e0::1]:8000/v1"),
     ("cloudflare", "https://model.example.com/v1"), ("ngrok", "https://demo.ngrok-free.app/v1"),
+    ("ngrok", "https://0a52-35-252-67-153.ngrok-free.app/v1"),
     ("notebook", "https://demo.trycloudflare.com/v1"), ("custom", "https://model.example.org/inference/v1"),
 ])
 def test_registered_target_deployments(platform, kind, url):
@@ -53,6 +54,15 @@ def test_registered_target_deployments(platform, kind, url):
 def test_invalid_target_urls_rejected(platform, url):
     with pytest.raises(ValueError):
         validate_local_endpoint(url, platform[0].settings, registered=True)
+
+
+def test_registered_https_respects_remote_target_setting(platform):
+    settings = replace(platform[0].settings, allow_remote_targets=False)
+    endpoint = "https://0a52-35-252-67-153.ngrok-free.app/v1"
+    with pytest.raises(ValueError, match="endpoint policy"):
+        validate_local_endpoint(endpoint, settings, registered=True)
+    allowed = replace(settings, local_allowed_hosts=settings.local_allowed_hosts + ("0a52-35-252-67-153.ngrok-free.app",))
+    assert validate_local_endpoint(endpoint, allowed, registered=True) == endpoint
 
 
 def test_credentials_write_only_encrypted_and_provider_headers(platform):
